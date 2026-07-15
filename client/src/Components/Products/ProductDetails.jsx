@@ -6,7 +6,18 @@ import { store } from "../../store.config.js";
 import { toast } from "react-toastify";
 
 function buildWhatsappLink(product) {
-  const text = `Bonjour, je suis intéressé par le modèle "${product.name}". Est-il disponible ?`;
+  const productUrl = `${window.location.origin}/${product._id}`;
+
+  const text = `Bonjour,
+
+Je suis intéressé par ce modèle.
+
+📌 Modèle : ${product.name}
+
+🔗 ${productUrl}
+
+Est-il disponible ?`;
+
   return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 

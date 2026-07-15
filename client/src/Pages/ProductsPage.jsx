@@ -3,7 +3,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-const WHATSAPP_NUMBER = "213542021271"; // replace with his real number
+const WHATSAPP_NUMBER = "213542120271"; // replace with his real number
 
 function buildWhatsappLink(product) {
   const text = `Bonjour, je suis intéressé par le modèle "${product.name}". Est-il disponible ?`;

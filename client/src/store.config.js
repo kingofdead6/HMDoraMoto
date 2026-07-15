@@ -12,7 +12,7 @@ export const store = {
     name: "HB Dora Moto",                       // text logo / brand name shown everywhere
     fullName: "HB Dora Moto",            // used in copyright / formal contexts
     tagline: "Algeria's #1 source for original smartphones. Best prices, fast delivery, cash on delivery.",
-    logoText: "NOVYX",                   // text logo fallback (rendered with accent dot)
+    logoText: "HM",                   // text logo fallback (rendered with accent dot)
     logo: "/src/assets/Logo.jpg",        // optional image logo (favicon source in this demo)
     favicon: "/src/assets/Logo.jpg",     // optional favicon (favicon source in this demo)
   },
@@ -28,9 +28,9 @@ export const store = {
   },
   contact: {
     email:    "contact@novyx.dz",
-    phone:    "+213 0542021271",
-    phoneHref: "+213542021271",          // digits-only form used in tel: links
-    whatsapp: "213542021271",            // digits-only form used in wa.me links
+    phone:    "+213 0542120271",
+    phoneHref: "+213542120271",          // digits-only form used in tel: links
+    whatsapp: "213542120271",            // digits-only form used in wa.me links
     address:  "Algeria",
   },
   social: {
