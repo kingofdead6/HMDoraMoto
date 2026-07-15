@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { store } from "../../store.config.js";
-import logo from "../../assets/logo.jpg";
+import logo from "../../assets/Logo.jpg";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);

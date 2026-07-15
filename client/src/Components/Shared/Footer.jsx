@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { store } from "../../store.config.js";
-import logo from "../../assets/logo.jpg";
+import logo from "../../assets/Logo.jpg";
 
 function FooterLink({ to, children }) {
   return (

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API_BASE_URL } from "../../api";
-import logo from "../assets/logo.jpg";
+import logo from "../assets/Logo.jpg";
 
 export default function Login() {
   const [email, setEmail] = useState("");
