@@ -22,9 +22,9 @@ function buildWhatsappLink(product) {
 
 Je suis intéressé par ce modèle.
 
-📌 Modèle : ${product.name}
+ Modèle : ${product.name}
 
-🔗 ${productUrl}
+ ${productUrl}
 
 Est-il disponible ?`;
 
