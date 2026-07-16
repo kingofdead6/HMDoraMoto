@@ -1,16 +1,15 @@
-"use client";
-
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 sm:px-8 lg:px-12 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-5 sm:px-8 lg:px-12 text-center">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        style={{ fontSize: "clamp(96px,18vw,192px)", fontWeight: 300, letterSpacing: "-.04em", color: "rgb(var(--secondary-rgb) / .35)", lineHeight: 1, marginBottom: 24 }}
+        className="font-['Space_Grotesk'] font-light leading-none text-red-600/20 mb-6"
+        style={{ fontSize: "clamp(96px,18vw,192px)", letterSpacing: "-.04em" }}
       >
         404
       </motion.div>
@@ -19,18 +18,19 @@ export default function NotFound() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.8 }}
-        style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: "clamp(28px,5vw,52px)", letterSpacing: "-.02em", color: "#fff", marginBottom: 16 }}
+        className="font-['Space_Grotesk'] font-bold text-[clamp(28px,5vw,52px)] tracking-[-0.02em] text-zinc-900 m-0 mb-4"
       >
-        Page Not Found
+        Page introuvable
       </motion.h1>
 
       <motion.p
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.8 }}
-        style={{ fontSize: 18, lineHeight: 1.6, color: "#94A3B8", maxWidth: 520, marginBottom: 40 }}
+        className="max-w-[520px] text-[15.5px] sm:text-lg leading-[1.65] text-zinc-500 mt-0 mb-10"
       >
-        The page you're looking for doesn't exist or has been moved. Let's get you back to shopping!
+        La page que vous cherchez n'existe pas ou a été déplacée. Retournez à
+        l'accueil pour découvrir nos scooters.
       </motion.p>
 
       <motion.div
@@ -39,10 +39,10 @@ export default function NotFound() {
         transition={{ delay: 0.6, duration: 0.8 }}
       >
         <Link
-          to="/products"
-          style={{ display: "inline-flex", alignItems: "center", padding: "16px 32px", background: "linear-gradient(135deg,var(--secondary),var(--primary))", color: "#fff", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 17, borderRadius: 15, textDecoration: "none", boxShadow: "0 20px 46px -14px rgb(var(--primary-rgb) / .9)" }}
+          to="/"
+          className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline shadow-[0_20px_45px_-18px_rgba(220,38,38,0.55)] transition-colors duration-200"
         >
-          Back to Shop
+          Retour à l'accueil
         </Link>
       </motion.div>
     </div>

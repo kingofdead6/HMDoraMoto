@@ -5,6 +5,16 @@ import { API_BASE_URL } from "../../../api";
 import { store } from "../../store.config.js";
 import { toast } from "react-toastify";
 
+// rotating accent palette for spec/feature chips — keeps things
+// playful without every tag looking identical
+const ACCENTS = [
+  { bg: "bg-red-50", text: "text-red-600", ring: "ring-red-100", dot: "bg-red-500" },
+  { bg: "bg-amber-50", text: "text-amber-600", ring: "ring-amber-100", dot: "bg-amber-500" },
+  { bg: "bg-emerald-50", text: "text-emerald-600", ring: "ring-emerald-100", dot: "bg-emerald-500" },
+  { bg: "bg-blue-50", text: "text-blue-600", ring: "ring-blue-100", dot: "bg-blue-500" },
+  { bg: "bg-purple-50", text: "text-purple-600", ring: "ring-purple-100", dot: "bg-purple-500" },
+];
+
 function buildWhatsappLink(product) {
   const productUrl = `${window.location.origin}/${product._id}`;
 
@@ -21,42 +31,36 @@ Est-il disponible ?`;
   return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
-function Gallery({ images, name }) {
-  const [active, setActive] = useState(0);
+function Gallery({ images, name, active, setActive }) {
   const safeImages = images?.length ? images : [{ url: null }];
+  const activeImage = safeImages[active]?.url;
 
   return (
     <div>
-      <div className="relative w-full aspect-square sm:aspect-[4/3] rounded-[20px] overflow-hidden bg-black/40 border border-white/[0.08]">
-        {safeImages[active]?.url ? (
-          <img
-            src={safeImages[active].url}
-            alt={name}
-            className="w-full h-full object-cover"
-          />
+      <div className="relative w-full aspect-square rounded-[28px] overflow-hidden bg-zinc-50 ring-1 ring-zinc-100">
+        {activeImage ? (
+          <img key={activeImage} src={activeImage} alt={name} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-6xl text-white/15">
-            🏍
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-7xl text-zinc-300">🏍</div>
         )}
       </div>
 
       {safeImages.length > 1 && (
-        <div className="flex gap-2.5 mt-3 overflow-x-auto pb-1">
+        <div className="flex gap-3 mt-4 overflow-x-auto pb-1">
           {safeImages.map((img, i) => (
             <button
               key={img._id ?? `img-${i}`}
               onClick={() => setActive(i)}
-              className={`shrink-0 w-16 h-16 rounded-[10px] overflow-hidden border transition-all duration-200 ${
+              className={`shrink-0 w-[72px] h-[72px] rounded-2xl overflow-hidden transition-all duration-200 ${
                 active === i
-                  ? "border-red-600 ring-2 ring-red-600/40"
-                  : "border-white/10 opacity-60 hover:opacity-100"
+                  ? "ring-2 ring-red-500 ring-offset-2"
+                  : "ring-1 ring-zinc-200 opacity-60 hover:opacity-100"
               }`}
             >
               {img.url ? (
                 <img src={img.url} alt={`${name} - photo ${i + 1}`} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-black/40" />
+                <div className="w-full h-full bg-zinc-100" />
               )}
             </button>
           ))}
@@ -71,6 +75,7 @@ export default function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [active, setActive] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,7 +84,8 @@ export default function ProductDetails() {
     const fetchProduct = async () => {
       setLoading(true);
       setNotFound(false);
-      setProduct(null); // clear stale data so a slow request never flashes the previous product
+      setProduct(null);
+      setActive(0);
 
       try {
         const res = await axios.get(`${API_BASE_URL}/products/${id}`, {
@@ -108,25 +114,25 @@ export default function ProductDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-[#050508]">
-        <p className="text-white/40 font-['Space_Grotesk']">Chargement…</p>
+      <div className="min-h-[60vh] flex items-center justify-center bg-white">
+        <p className="text-zinc-400 font-['Space_Grotesk']">Chargement…</p>
       </div>
     );
   }
 
   if (notFound || !product) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-[#050508] px-5 text-center">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white px-5 text-center">
         <p className="text-5xl">🏍</p>
-        <h1 className="font-['Space_Grotesk'] font-bold text-2xl text-white m-0">
+        <h1 className="font-['Space_Grotesk'] font-bold text-2xl text-zinc-900 m-0">
           Produit introuvable
         </h1>
-        <p className="text-white/50 text-sm max-w-xs">
+        <p className="text-zinc-500 text-sm max-w-xs">
           Ce modèle n'existe plus ou a été retiré du catalogue.
         </p>
         <Link
           to="/"
-          className="mt-2 px-6 py-3 rounded-[12px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-sm no-underline transition-colors duration-200"
+          className="mt-2 px-6 py-3 rounded-full bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-sm no-underline transition-colors duration-200"
         >
           Retour à l'accueil
         </Link>
@@ -138,101 +144,156 @@ export default function ProductDetails() {
   const hasDimensions = length != null && width != null && height != null;
 
   return (
-    <div className="bg-[#050508] min-h-screen px-5 sm:px-[26px] py-10 sm:py-14">
-      <div className="max-w-[1100px] mx-auto">
+    <div className="bg-white min-h-screen px-5 sm:px-[26px] py-8 sm:py-12">
+      <div className="max-w-[1160px] mx-auto">
         {/* breadcrumb */}
-        <div className="flex items-center gap-2 mb-8 font-['JetBrains_Mono'] text-[12px] text-white/35">
-          <Link to="/" className="text-white/35 no-underline hover:text-white/70 transition-colors">
+        <div className="flex items-center gap-2 mb-8 font-['JetBrains_Mono'] text-[12px] text-zinc-400">
+          <Link to="/" className="text-zinc-400 no-underline hover:text-zinc-700 transition-colors">
             Accueil
           </Link>
           <span>/</span>
-          <span className="text-white/60">{product.category?.name || "Scooter"}</span>
+          <span className="text-zinc-500">{product.category?.name || "Scooter"}</span>
           <span>/</span>
-          <span className="text-white/80">{product.name}</span>
+          <span className="text-zinc-700">{product.name}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
-          <Gallery key={product._id ?? id} images={product.images} name={product.name} />
+        {/* ---------- gallery + buy box, side by side ---------- */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 mb-16">
+          <Gallery
+            key={product._id ?? id}
+            images={product.images}
+            name={product.name}
+            active={active}
+            setActive={setActive}
+          />
 
-          <div>
-            {!product.available && (
-              <div className="inline-block mb-4 px-3 py-1 rounded-full bg-white/[0.06] border border-white/15 text-[11px] font-['JetBrains_Mono'] text-white/60 uppercase">
-                Indisponible
-              </div>
-            )}
+          <div className="lg:sticky lg:top-8 lg:self-start">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-red-50 text-red-600 font-['JetBrains_Mono'] text-[11px] tracking-[.06em] font-medium uppercase">
+                {product.category?.name || "Scooter"}
+              </span>
+              {!product.available && (
+                <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-zinc-100 text-zinc-500 font-['JetBrains_Mono'] text-[11px] tracking-[.06em] font-medium uppercase">
+                  Indisponible
+                </span>
+              )}
+            </div>
 
-            <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-red-500 uppercase m-0 mb-2">
-              {product.category?.name || "Scooter"}
-            </p>
-            <h1 className="font-['Space_Grotesk'] font-bold text-[32px] sm:text-[40px] leading-[1.08] text-white m-0 mb-3">
+            <h1 className="font-['Space_Grotesk'] font-bold text-[34px] sm:text-[42px] leading-[1.06] tracking-[-0.02em] text-zinc-900 m-0 mb-3">
               {product.name}
             </h1>
-            <p className="font-['Space_Grotesk'] font-bold text-2xl text-white mb-6">
+
+            <p className="font-['Space_Grotesk'] font-bold text-[26px] text-red-600 m-0 mb-6">
               {product.price != null ? `${product.price.toLocaleString()} DA` : "Prix sur demande"}
             </p>
 
             {product.description && (
-              <p className="text-[15px] leading-[1.7] text-white/65 mb-7">
+              <p className="text-[15px] leading-[1.7] text-zinc-500 mb-7">
                 {product.description}
               </p>
             )}
 
-            <a
-              href={buildWhatsappLink(product)}
+            
+             <a href={buildWhatsappLink(product)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 rounded-[14px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline transition-colors duration-200 shadow-[0_16px_40px_-12px_rgba(220,38,38,0.6)] mb-8"
+              className="flex items-center justify-center gap-2.5 w-full px-8 py-4 rounded-full bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline transition-all duration-200 shadow-[0_16px_36px_-14px_rgba(220,38,38,0.6)] mb-8"
             >
               Commander via WhatsApp
             </a>
 
-            {hasDimensions && (
-              <div className="mb-7 pb-7 border-b border-white/[0.07]">
-                <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-white/40 uppercase m-0 mb-2">
-                  Dimensions
-                </p>
-                <p className="text-[14px] text-white/80 m-0">
-                  {length} × {width} × {height} mm (L × l × H)
-                </p>
-              </div>
-            )}
-
-            {product.specs?.length > 0 && (
-              <div className="mb-7 pb-7 border-b border-white/[0.07]">
-                <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-white/40 uppercase m-0 mb-3">
-                  Caractéristiques
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5">
-                  {product.specs.map((s, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between items-center py-2.5 border-b border-white/[0.05] text-[13.5px]"
-                    >
-                      <span className="text-white/50">{s.label}</span>
-                      <span className="text-white/90 font-medium">{s.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {product.features?.length > 0 && (
-              <div>
-                <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-white/40 uppercase m-0 mb-3">
-                  Équipements
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {product.features.map((f, i) => (
+            {/* quick spec chips — colorful, scannable */}
+            {(product.specs?.length > 0 || hasDimensions) && (
+              <div className="flex flex-wrap gap-2">
+                {product.specs?.slice(0, 6).map((s, i) => {
+                  const a = ACCENTS[i % ACCENTS.length];
+                  return (
                     <span
                       key={i}
-                      className="text-[12.5px] px-3 py-[7px] rounded-full bg-white/[0.06] border border-white/10 text-white/75"
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full ${a.bg} ${a.text} ring-1 ${a.ring} text-[12.5px] font-medium`}
                     >
-                      {f}
+                      <span className={`w-1.5 h-1.5 rounded-full ${a.dot}`} />
+                      {s.label}: <span className="font-bold">{s.value}</span>
                     </span>
-                  ))}
-                </div>
+                  );
+                })}
+                {hasDimensions && (
+                  <span className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-50 text-zinc-600 ring-1 ring-zinc-100 text-[12.5px] font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                    {length} × {width} × {height} mm
+                  </span>
+                )}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ---------- full specs table ---------- */}
+        {product.specs?.length > 0 && (
+          <div className="mb-14">
+            <h2 className="font-['Space_Grotesk'] font-bold text-[22px] text-zinc-900 m-0 mb-5">
+              Caractéristiques
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {product.specs.map((s, i) => {
+                const a = ACCENTS[i % ACCENTS.length];
+                return (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center px-5 py-4 rounded-2xl bg-zinc-50/70 border border-zinc-100"
+                  >
+                    <span className="flex items-center gap-2.5 text-zinc-500 text-[13.5px]">
+                      <span className={`w-2 h-2 rounded-full ${a.dot}`} />
+                      {s.label}
+                    </span>
+                    <span className="text-zinc-900 font-['Space_Grotesk'] font-bold text-[14px]">
+                      {s.value}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ---------- features ---------- */}
+        {product.features?.length > 0 && (
+          <div className="mb-16">
+            <h2 className="font-['Space_Grotesk'] font-bold text-[22px] text-zinc-900 m-0 mb-5">
+              Équipements
+            </h2>
+            <div className="flex flex-wrap gap-2.5">
+              {product.features.map((f, i) => {
+                const a = ACCENTS[i % ACCENTS.length];
+                return (
+                  <span
+                    key={i}
+                    className={`text-[13px] px-4 py-2.5 rounded-full ${a.bg} ${a.text} ring-1 ${a.ring} font-['Space_Grotesk'] font-medium`}
+                  >
+                    {f}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ---------- closing CTA ---------- */}
+        <div className="relative overflow-hidden rounded-[28px] bg-zinc-50 px-8 sm:px-14 py-14 sm:py-16 text-center">
+          <div className="absolute -top-20 -left-16 w-64 h-64 rounded-full bg-red-200/40 blur-[70px]" />
+          <div className="absolute -bottom-24 -right-16 w-72 h-72 rounded-full bg-amber-200/40 blur-[80px]" />
+          <div className="relative">
+            <h2 className="font-['Space_Grotesk'] font-bold text-[clamp(24px,4vw,36px)] leading-[1.15] text-zinc-900 max-w-[520px] mx-auto m-0 mb-7">
+              Prêt à rouler avec le {product.name} ?
+            </h2>
+            
+              <a href={buildWhatsappLink(product)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-9 py-4 rounded-full bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline transition-all duration-200 shadow-[0_16px_36px_-14px_rgba(220,38,38,0.6)]"
+            >
+              Commander via WhatsApp
+            </a>
           </div>
         </div>
       </div>

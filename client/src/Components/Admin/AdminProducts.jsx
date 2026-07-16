@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
-import { API_BASE_URL } from "../../../api";
+import { API_BASE_URL } from "../../../api.js";
 import { toast } from "react-toastify";
 import { Plus, Search, Trash2, Edit, X, AlertTriangle, Check } from "lucide-react";
 
@@ -13,9 +13,7 @@ const authHeaders = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
-// Pulled from both brochure sheets (Nova + Mantis) so the admin never has
-// to type a label from scratch — just tick the ones that apply to this
-// model and fill in the value.
+
 const SPEC_PRESETS = [
   "Puissance nominale",
   "Tension nominale",
@@ -548,6 +546,75 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
   );
 }
 
+function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
+  const issues = getVisibilityIssues(product);
+
+  return (
+    <div className="group relative bg-white rounded-[20px] border border-gray-100 overflow-hidden hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-300">
+      <div className="relative h-40 bg-gray-50">
+        {product.images?.[0]?.url ? (
+          <img
+            src={product.images[0].url}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl text-gray-300">
+            🏍
+          </div>
+        )}
+
+        {/* status badges */}
+        <div className="absolute top-2.5 left-2.5 flex gap-1.5">
+          {product.showOnMainPage && (
+            <span className="text-[10px] px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-semibold uppercase ring-1 ring-red-100">
+              Accueil
+            </span>
+          )}
+          {!product.available && (
+            <span className="text-[10px] px-2.5 py-1 rounded-full bg-gray-900/80 text-white font-semibold uppercase">
+              Indispo
+            </span>
+          )}
+        </div>
+
+        {issues.length > 0 && (
+          <button
+            onClick={() => onShowIssues(issues)}
+            title="Voir pourquoi ce produit a des points à corriger"
+            className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/95 text-amber-500 hover:bg-amber-50 flex items-center justify-center shadow-sm transition-colors"
+          >
+            <AlertTriangle size={14} />
+          </button>
+        )}
+
+        {/* action buttons — reveal on hover */}
+        <div className="absolute inset-x-2.5 bottom-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200">
+          <button
+            onClick={() => onEdit(product)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[10px] bg-white/95 backdrop-blur text-gray-700 hover:text-gray-900 text-[12px] font-semibold shadow-sm transition-colors"
+          >
+            <Edit size={13} /> Modifier
+          </button>
+          <button
+            onClick={() => onDelete(product)}
+            className="w-9 flex items-center justify-center rounded-[10px] bg-white/95 backdrop-blur text-gray-500 hover:text-red-600 shadow-sm transition-colors"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4">
+        <p className="font-bold text-[14.5px] text-gray-900 m-0 truncate">{product.name}</p>
+        <p className="text-[12.5px] text-gray-400 m-0 mt-1">
+          {product.price != null ? `${product.price.toLocaleString()} DA` : "Sur demande"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -612,8 +679,11 @@ export default function AdminProducts() {
         : `${API_BASE_URL}/products`;
       const method = isEdit ? "put" : "post";
 
-      const { data: saved } = await axios[method](url, fd, {
-        headers: { ...authHeaders(), "Content-Type": "multipart/form-data" },
+      const { data: saved } = await axios.request({
+        method,
+        url,
+        data: fd,
+        headers: authHeaders(),
       });
 
       if (isEdit && removedImageIds.length > 0) {
@@ -660,24 +730,24 @@ export default function AdminProducts() {
 
   return (
     <div className="bg-gray-50 min-h-screen px-5 sm:px-[26px] py-10">
-      <div className="max-w-[1100px] mx-auto">
+      <div className="max-w-[1200px] mx-auto">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <h1 className="font-bold text-2xl sm:text-3xl text-gray-900 m-0">Produits</h1>
           <button
             onClick={() => setEditing({})}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-[12px] bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors"
           >
             <Plus size={16} /> Nouveau produit
           </button>
         </div>
 
-        <div className="relative mb-6 max-w-xs">
+        <div className="relative mb-7 max-w-xs">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-350" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un produit…"
-            className="w-full pl-10 pr-3.5 py-[10px] rounded-[10px] bg-white border border-gray-200 text-gray-900 text-sm placeholder:text-gray-350 outline-none focus:border-red-500 transition-colors"
+            className="w-full pl-10 pr-3.5 py-[10px] rounded-full bg-white border border-gray-200 text-gray-900 text-sm placeholder:text-gray-350 outline-none focus:border-red-500 transition-colors"
           />
         </div>
 
@@ -686,73 +756,16 @@ export default function AdminProducts() {
         ) : filtered.length === 0 ? (
           <p className="text-gray-400">Aucun produit trouvé.</p>
         ) : (
-          <div className="rounded-[16px] border border-gray-200 overflow-hidden bg-white">
-            {filtered.map((p, i) => {
-              const issues = getVisibilityIssues(p);
-              return (
-                <div
-                  key={p._id}
-                  className={`flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors ${
-                    i !== filtered.length - 1 ? "border-b border-gray-100" : ""
-                  }`}
-                >
-                  <div className="w-14 h-14 rounded-[10px] overflow-hidden bg-gray-100 shrink-0">
-                    {p.images?.[0]?.url ? (
-                      <img src={p.images[0].url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xl text-gray-300">
-                        🏍
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-900 m-0 truncate">{p.name}</p>
-                    <p className="text-[11px] text-gray-400 m-0 mt-0.5">
-                      {p.price != null ? `${p.price.toLocaleString()} DA` : "Sur demande"}
-                    </p>
-                  </div>
-
-                  <div className="hidden sm:flex gap-1.5">
-                    {p.showOnMainPage && (
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-red-50 border border-red-200 text-red-600 font-semibold uppercase">
-                        Accueil
-                      </span>
-                    )}
-                    {!p.available && (
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-500 font-semibold uppercase">
-                        Indispo
-                      </span>
-                    )}
-                  </div>
-
-                  {issues.length > 0 && (
-                    <button
-                      onClick={() => setIssuesPopup(issues)}
-                      title="Voir pourquoi ce produit a des points à corriger"
-                      className="w-9 h-9 rounded-[9px] bg-amber-50 border border-amber-200 text-amber-500 hover:bg-amber-100 flex items-center justify-center transition-colors shrink-0"
-                    >
-                      <AlertTriangle size={14} />
-                    </button>
-                  )}
-
-                  <div className="flex gap-1.5 shrink-0">
-                    <button
-                      onClick={() => setEditing(p)}
-                      className="w-9 h-9 rounded-[9px] bg-gray-50 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-100 flex items-center justify-center transition-colors"
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p)}
-                      className="w-9 h-9 rounded-[9px] bg-gray-50 border border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filtered.map((p) => (
+              <ProductCard
+                key={p._id}
+                product={p}
+                onEdit={setEditing}
+                onDelete={handleDelete}
+                onShowIssues={setIssuesPopup}
+              />
+            ))}
           </div>
         )}
       </div>

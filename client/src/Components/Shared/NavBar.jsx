@@ -50,41 +50,49 @@ export default function Navbar() {
 
   const navItems = isAdmin
     ? [
-        { label: "Dashboard", to: "/admin/dashboard" },
         { label: "Produits", to: "/admin/products" },
       ]
     : [
         { label: "Accueil", to: "/" },
-        { label: "Contact", to: "/contact" },
+        { label: "Products", to: "/#products" },
       ];
+
+  const isActive = (item) => {
+    if (item.to === "/") {
+      return location.pathname === "/" && !location.hash;
+    }
+    if (item.to.startsWith("/#")) {
+      return location.pathname === "/" && location.hash === `#${item.to.split("#")[1]}`;
+    }
+    return location.pathname.startsWith(item.to);
+  };
 
   return (
     <>
       <header
-        className={`sticky top-0 z-[90] backdrop-blur-[22px] saturate-150 border-b border-white/[0.08] transition-all duration-300 ${
-          scrolled ? "bg-black/90" : "bg-black/50"
+        className={`sticky top-0 z-[90] bg-white/90 backdrop-blur-[18px] border-b transition-all duration-300 ${
+          scrolled ? "border-zinc-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" : "border-zinc-100"
         }`}
       >
         <div className="max-w-[1280px] mx-auto px-5 sm:px-[26px] py-3 flex items-center justify-between gap-6">
           <Link to="/" className="flex items-center gap-[10px] no-underline shrink-0">
-            <img src={logo} alt={store.brand.name} className="h-9 w-9 object-contain" />
-            <span className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl tracking-[-0.02em] text-white">
+            <img src={logo} alt={store.brand.name} className="h-9 w-9 object-contain rounded-full" />
+            <span className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl tracking-[-0.02em] text-zinc-900">
               {store.brand.name}
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1.5">
             {navItems.map((n) => {
-              const active =
-                n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to);
+              const active = isActive(n);
               return (
                 <Link
                   key={n.to}
                   to={n.to}
                   className={`font-['Manrope'] font-semibold text-[14.5px] px-4 py-[9px] rounded-[11px] border transition-all duration-[250ms] no-underline ${
                     active
-                      ? "text-white bg-red-600/20 border-red-600/50"
-                      : "text-white/65 bg-transparent border-transparent hover:text-white hover:bg-white/[0.07] hover:border-white/20"
+                      ? "text-red-600 bg-red-50 border-red-100"
+                      : "text-zinc-500 bg-transparent border-transparent hover:text-zinc-900 hover:bg-zinc-100"
                   }`}
                 >
                   {n.label}
@@ -108,7 +116,7 @@ export default function Navbar() {
             {isAdmin && (
               <button
                 onClick={handleLogout}
-                className="font-['Manrope'] font-semibold text-sm text-white/70 bg-transparent border border-white/[0.12] px-4 py-[9px] rounded-[11px] cursor-pointer hover:text-white hover:border-white/30 transition-all duration-[250ms]"
+                className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-[9px] rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms]"
               >
                 Déconnexion
               </button>
@@ -117,7 +125,7 @@ export default function Navbar() {
             <button
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="Menu"
-              className="md:hidden flex flex-col gap-1 items-center justify-center w-[42px] h-[42px] rounded-[12px] bg-white/[0.05] border border-white/[0.08] cursor-pointer text-white"
+              className="md:hidden flex flex-col gap-1 items-center justify-center w-[42px] h-[42px] rounded-[12px] bg-zinc-100 border border-zinc-200 cursor-pointer text-zinc-700"
             >
               {[0, 1, 2].map((i) => (
                 <span key={i} className="w-[18px] h-0.5 bg-current rounded-sm block" />
@@ -128,19 +136,18 @@ export default function Navbar() {
       </header>
 
       {menuOpen && (
-        <nav className="md:hidden bg-black/80 backdrop-blur-lg border-b border-white/[0.08] py-4">
+        <nav className="md:hidden bg-white border-b border-zinc-200 py-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]">
           <div className="max-w-[1280px] mx-auto px-5 sm:px-[26px] flex flex-col gap-2">
             {navItems.map((n) => {
-              const active =
-                n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to);
+              const active = isActive(n);
               return (
                 <Link
                   key={n.to}
                   to={n.to}
                   className={`font-['Manrope'] font-semibold text-[14.5px] px-4 py-2 rounded-[11px] block no-underline transition-all duration-[250ms] ${
                     active
-                      ? "text-white bg-red-600/20"
-                      : "text-white/65 hover:text-white hover:bg-white/[0.07]"
+                      ? "text-red-600 bg-red-50"
+                      : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
                   }`}
                 >
                   {n.label}
@@ -160,7 +167,7 @@ export default function Navbar() {
             {isAdmin && (
               <button
                 onClick={handleLogout}
-                className="font-['Manrope'] font-semibold text-sm text-white/70 bg-transparent border border-white/[0.12] px-4 py-2 rounded-[11px] cursor-pointer hover:text-white hover:border-white/30 transition-all duration-[250ms] text-left"
+                className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-2 rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms] text-left"
               >
                 Déconnexion
               </button>

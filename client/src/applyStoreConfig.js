@@ -1,13 +1,5 @@
-// Runtime bridge between store.config.js and the DOM.
-// - Writes the three brand theme colors into CSS variables (--primary/secondary/
-//   accent) so both Tailwind tokens and inline var(--…) styles follow the config.
-// - Syncs the document <title>, <html lang> and favicon from the config.
-// This keeps store.config.js the single source of truth without introducing a
-// separate head-manager library.
-
 import { store } from "./store.config.js";
 
-// "#6C2BD9" -> "108 43 217" (space-separated channels for rgb(... / alpha))
 function hexToRgbChannels(hex) {
   let h = String(hex).trim().replace("#", "");
   if (h.length === 3) h = h.split("").map((c) => c + c).join("");

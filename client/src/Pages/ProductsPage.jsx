@@ -3,11 +3,11 @@ import axios from "axios";
 import { API_BASE_URL } from "../../api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-const WHATSAPP_NUMBER = "213542120271"; // replace with his real number
+import { store } from "../store.config.js";
 
 function buildWhatsappLink(product) {
   const text = `Bonjour, je suis intéressé par le modèle "${product.name}". Est-il disponible ?`;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
 function ProductModal({ product, onClose }) {
@@ -27,22 +27,22 @@ function ProductModal({ product, onClose }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-5 [animation:fadeIn_.2s]"
+      className="fixed inset-0 z-50  backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-5 [animation:fadeIn_.2s]"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-[720px] max-h-[92vh] overflow-y-auto bg-[#0c0c0f] border border-white/10 rounded-t-[22px] sm:rounded-[22px] [animation:scaleIn_.25s_both]"
+        className="relative w-full sm:max-w-[720px] max-h-[92vh] overflow-y-auto bg-white border border-zinc-200 shadow-2xl rounded-t-[22px] sm:rounded-[22px] [animation:scaleIn_.25s_both]"
       >
         <button
           onClick={onClose}
           aria-label="Fermer"
-          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/50 border border-white/15 text-white/80 hover:text-white hover:bg-black/70 flex items-center justify-center text-lg"
+          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 flex items-center justify-center text-lg shadow-sm"
         >
           ✕
         </button>
 
         {product.images?.[0]?.url && (
-          <div className="w-full h-[260px] sm:h-[320px] bg-black">
+          <div className="w-full h-[260px] sm:h-[320px] bg-zinc-100">
             <img
               src={product.images[0].url}
               alt={product.name}
@@ -52,29 +52,29 @@ function ProductModal({ product, onClose }) {
         )}
 
         <div className="p-6 sm:p-8">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-red-500 uppercase m-0 mb-2">
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-red-600 uppercase m-0 mb-2">
             {product.category?.name || "Scooter"}
           </p>
-          <h2 className="font-['Space_Grotesk'] font-bold text-[26px] sm:text-[30px] text-white m-0 mb-2">
+          <h2 className="font-['Space_Grotesk'] font-bold text-[26px] sm:text-[30px] text-zinc-900 m-0 mb-2">
             {product.name}
           </h2>
 
-          <p className="font-['Space_Grotesk'] font-bold text-xl text-white mb-5">
+          <p className="font-['Space_Grotesk'] font-bold text-xl text-zinc-900 mb-5">
             {product.price ? `${product.price.toLocaleString()} DA` : "Prix sur demande"}
           </p>
 
           {product.description && (
-            <p className="text-[14.5px] leading-[1.65] text-white/65 mb-6">
+            <p className="text-[14.5px] leading-[1.65] text-zinc-600 mb-6">
               {product.description}
             </p>
           )}
 
           {hasDimensions && (
             <div className="mb-6">
-              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-white/40 uppercase m-0 mb-2">
+              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-2">
                 Dimensions
               </p>
-              <p className="text-[14px] text-white/80 m-0">
+              <p className="text-[14px] text-zinc-700 m-0">
                 {length} × {width} × {height} mm
               </p>
             </div>
@@ -82,17 +82,17 @@ function ProductModal({ product, onClose }) {
 
           {product.specs?.length > 0 && (
             <div className="mb-6">
-              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-white/40 uppercase m-0 mb-3">
+              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-3">
                 Caractéristiques
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                 {product.specs.map((s, i) => (
                   <div
                     key={i}
-                    className="flex justify-between items-center py-2 border-b border-white/[0.06] text-[13.5px]"
+                    className="flex justify-between items-center py-2 border-b border-zinc-100 text-[13.5px]"
                   >
-                    <span className="text-white/50">{s.label}</span>
-                    <span className="text-white/90 font-medium">{s.value}</span>
+                    <span className="text-zinc-500">{s.label}</span>
+                    <span className="text-zinc-800 font-medium">{s.value}</span>
                   </div>
                 ))}
               </div>
@@ -101,14 +101,14 @@ function ProductModal({ product, onClose }) {
 
           {product.features?.length > 0 && (
             <div className="mb-7">
-              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-white/40 uppercase m-0 mb-3">
+              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-3">
                 Équipements
               </p>
               <div className="flex flex-wrap gap-2">
                 {product.features.map((f, i) => (
                   <span
                     key={i}
-                    className="text-[12.5px] px-3 py-[7px] rounded-full bg-white/[0.06] border border-white/10 text-white/75"
+                    className="text-[12.5px] px-3 py-[7px] rounded-full bg-zinc-100 border border-zinc-200 text-zinc-700"
                   >
                     {f}
                   </span>
@@ -117,8 +117,8 @@ function ProductModal({ product, onClose }) {
             </div>
           )}
 
-          
-           <a href={buildWhatsappLink(product)}
+          <a
+            href={buildWhatsappLink(product)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-4 rounded-[14px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-[15.5px] transition-colors duration-200"
@@ -136,11 +136,11 @@ function ProductCard({ product }) {
 
   return (
     <div
-      onClick={() => navigate(`/${product._id}`)}
-      className="group cursor-pointer bg-[#0d0d10] border border-white/8 rounded-[18px] overflow-hidden hover:border-red-500/50 hover:-translate-y-1 transition-all duration-300"
+      onClick={() => navigate(`/product/${product._id}`)}
+      className="group relative cursor-pointer bg-white border border-zinc-200 rounded-[18px] overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)] hover:border-red-200 hover:-translate-y-1 transition-all duration-300"
     >
       {product.images?.[0]?.url ? (
-        <div className="h-[220px] overflow-hidden">
+        <div className="h-[220px] overflow-hidden bg-zinc-100">
           <img
             src={product.images[0].url}
             alt={product.name}
@@ -148,34 +148,34 @@ function ProductCard({ product }) {
           />
         </div>
       ) : (
-        <div className="h-[220px] flex items-center justify-center bg-[#16161a] text-6xl">
+        <div className="h-[220px] flex items-center justify-center bg-zinc-50 text-6xl">
           🏍
         </div>
       )}
 
       {!product.available && (
-        <div className="absolute top-3 right-3 bg-red-600 text-white text-xs px-3 py-1 rounded-full">
+        <div className="absolute top-3 right-3 bg-zinc-900 text-white text-xs px-3 py-1 rounded-full">
           Indisponible
         </div>
       )}
 
       <div className="p-4">
-        <p className="font-['JetBrains_Mono'] text-[10.5px] tracking-[.06em] text-red-500 uppercase m-0 mb-1">
+        <p className="font-['JetBrains_Mono'] text-[10.5px] tracking-[.06em] text-red-600 uppercase m-0 mb-1">
           {product.category?.name || "Scooter"}
         </p>
 
-        <h3 className="font-['Space_Grotesk'] font-bold text-[16.5px] text-white m-0 mb-2 leading-snug">
+        <h3 className="font-['Space_Grotesk'] font-bold text-[16.5px] text-zinc-900 m-0 mb-2 leading-snug">
           {product.name}
         </h3>
 
         <div className="flex items-center justify-between">
-          <span className="font-['Space_Grotesk'] font-bold text-[15px] text-white">
+          <span className="font-['Space_Grotesk'] font-bold text-[15px] text-zinc-900">
             {product.price
               ? `${product.price.toLocaleString()} DA`
               : "Sur demande"}
           </span>
 
-          <span className="text-[12.5px] font-semibold text-white/50 group-hover:text-white transition-colors">
+          <span className="text-[12.5px] font-semibold text-zinc-400 group-hover:text-red-600 transition-colors">
             Détails →
           </span>
         </div>
@@ -215,21 +215,21 @@ export default function ProductsSection() {
   );
 
   return (
-    <section id="products" className="relative bg-[#050508] px-5 sm:px-[26px] py-16 sm:py-24">
+    <section id="products" className="relative bg-white px-5 sm:px-[26px] py-16 sm:py-24">
       <div className="max-w-[1280px] mx-auto">
         <div className="text-center mb-12">
-          <p className="font-['JetBrains_Mono'] text-[12px] tracking-[.12em] text-red-500 uppercase m-0 mb-3">
+          <p className="font-['JetBrains_Mono'] text-[12px] tracking-[.12em] text-red-600 uppercase m-0 mb-3">
             Notre gamme
           </p>
-          <h2 className="font-['Space_Grotesk'] font-bold text-[clamp(28px,4.5vw,44px)] text-white m-0">
+          <h2 className="font-['Space_Grotesk'] font-bold text-[clamp(28px,4.5vw,44px)] text-zinc-900 m-0">
             Nos scooters
           </h2>
         </div>
 
         {loading ? (
-          <p className="text-center text-white/50 font-['Space_Grotesk']">Chargement…</p>
+          <p className="text-center text-zinc-400 font-['Space_Grotesk']">Chargement…</p>
         ) : sorted.length === 0 ? (
-          <p className="text-center text-white/50 font-['Space_Grotesk']">
+          <p className="text-center text-zinc-400 font-['Space_Grotesk']">
             Aucun produit disponible pour le moment.
           </p>
         ) : (
