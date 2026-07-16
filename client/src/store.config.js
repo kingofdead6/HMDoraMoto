@@ -2,7 +2,7 @@ export const store = {
   brand: {
     name: "HM Dora Moto",                       // text logo / brand name shown everywhere
     fullName: "HM Dora Moto",            // used in copyright / formal contexts
-    tagline: "Algeria's #1 source for original smartphones. Best prices, fast delivery, cash on delivery.",
+    tagline: "La meilleure source en Algérie pour les motos originales. Meilleurs prix, livraison rapide, paiement à la livraison.",
     logoText: "HM",                   // text logo fallback (rendered with accent dot)
     logo: "/src/assets/Logo.jpg",        // optional image logo (favicon source in this demo)
     favicon: "/src/assets/Logo.jpg",     // optional favicon (favicon source in this demo)
@@ -36,8 +36,8 @@ export const store = {
     lang:           "fr",
   },
   seo: {
-    title:       "HB Dora Moto",
-    description: "Algeria's #1 source for original Motorcycles. Best prices, fast delivery, cash on delivery.",
+    title:       "HM Dora Moto",
+    description: "La référence en Algérie pour les motos originales. Meilleurs prix, livraison rapide, paiement à la livraison.",
     ogImage:     "/src/assets/Logo.jpg",
   },
 };
