@@ -26,26 +26,36 @@ function buildWhatsappLink(product, language) {
   return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
-function Gallery({ images, name, active, setActive }) {
+function Gallery({ images, name, active, setActive, onOpenImage }) {
   const safeImages = images?.length ? images : [{ url: null }];
   const activeImage = safeImages[active]?.url;
 
   return (
     <div>
-      <div className="relative w-full aspect-square rounded-[28px] overflow-hidden bg-zinc-50 ring-1 ring-zinc-100">
+      <button
+        type="button"
+        onClick={() => onOpenImage(active)}
+        className="relative w-full aspect-square rounded-[28px] overflow-hidden bg-zinc-50 ring-1 ring-zinc-100 cursor-zoom-in group"
+      >
         {activeImage ? (
-          <img key={activeImage} src={activeImage} alt={name} className="w-full h-full object-cover" />
+          <img key={activeImage} src={activeImage} alt={name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-7xl text-zinc-300">🏍</div>
         )}
-      </div>
+        <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-white">
+          Zoom
+        </span>
+      </button>
 
       {safeImages.length > 1 && (
         <div className="flex gap-3 mt-4 overflow-x-auto pb-1">
           {safeImages.map((img, i) => (
             <button
               key={img._id ?? `img-${i}`}
-              onClick={() => setActive(i)}
+              onClick={() => {
+                setActive(i);
+                onOpenImage(i);
+              }}
               className={`shrink-0 w-[72px] h-[72px] rounded-2xl overflow-hidden transition-all duration-200 ${
                 active === i
                   ? "ring-2 ring-red-500 ring-offset-2"
@@ -72,6 +82,9 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [active, setActive] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -107,6 +120,35 @@ export default function ProductDetails() {
       controller.abort();
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setLightboxOpen(false);
+        setZoom(1);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [lightboxOpen]);
+
+  const openLightbox = (index = 0) => {
+    setLightboxIndex(index);
+    setZoom(1);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setZoom(1);
+  };
 
   if (loading) {
     return (
@@ -161,6 +203,7 @@ export default function ProductDetails() {
             name={product.name}
             active={active}
             setActive={setActive}
+            onOpenImage={openLightbox}
           />
 
           <div className="lg:sticky lg:top-8 lg:self-start">
@@ -292,6 +335,65 @@ export default function ProductDetails() {
             </a>
           </div>
         </div>
+
+        {lightboxOpen && (
+          <div className="fixed inset-0 z-[60000] flex items-center justify-center bg-black/95" onClick={closeLightbox}>
+            <button
+              type="button"
+              onClick={closeLightbox}
+              className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/40 text-xl text-white transition hover:bg-black/60"
+              aria-label="Close image"
+            >
+              ×
+            </button>
+
+            {product.images?.length > 1 && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setLightboxIndex((current) => (current === 0 ? product.images.length - 1 : current - 1));
+                }}
+                className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/20 bg-black/40 px-3 py-2 text-xl text-white transition hover:bg-black/60"
+              >
+                ←
+              </button>
+            )}
+
+            <div className="relative flex h-full w-full max-w-5xl items-center justify-center p-3 sm:p-5" onClick={(event) => event.stopPropagation()}>
+              <div className="flex h-full w-full items-center justify-center">
+                {product.images?.[lightboxIndex]?.url ? (
+                  <img
+                    src={product.images[lightboxIndex].url}
+                    alt={product.name}
+                    className="max-h-full max-w-full rounded-[16px] object-contain"
+                  />
+                ) : (
+                  <div className="text-8xl text-white/80">🏍</div>
+                )}
+              </div>
+            </div>
+
+            {product.images?.length > 1 && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setLightboxIndex((current) => (current + 1) % product.images.length);
+                }}
+                className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/20 bg-black/40 px-3 py-2 text-xl text-white transition hover:bg-black/60"
+              >
+                →
+              </button>
+            )}
+
+            {product.images?.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-sm text-white/90">
+                {lightboxIndex + 1} / {product.images.length}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
