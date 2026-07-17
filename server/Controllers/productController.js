@@ -167,6 +167,8 @@ export const createProduct = asyncHandler(async (req, res) => {
       height: null,
     });
 
+    const normalizedDescription = typeof description === 'string' ? description.trim() : description ?? '';
+
     const product = await Product.create({
       name: name.trim(),
       slug: await generateUniqueSlug(name),
@@ -174,7 +176,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         price !== undefined && price !== ""
           ? Number(price)
           : null,
-      description: description?.trim() || "",
+      description: normalizedDescription,
       featured: featured === "true" || featured === true,
       available:
         available === undefined
@@ -216,7 +218,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
     product.slug = await generateUniqueSlug(name, product._id);
   }
   if (price !== undefined) product.price = price === '' ? null : Number(price);
-  if (description !== undefined) product.description = description.trim();
+  if (description !== undefined) {
+    product.description = typeof description === 'string' ? description.trim() : description ?? '';
+  }
   if (featured !== undefined) product.featured = featured === 'true' || featured === true;
   if (available !== undefined) product.available = available === 'true' || available === true;
   if (showOnMainPage !== undefined)

@@ -44,8 +44,6 @@ function getVisibilityIssues(p, t) {
     issues.push(t("adminProducts.visibilityImages"));
   if (!p.specs || p.specs.length === 0)
     issues.push(t("adminProducts.visibilitySpecs"));
-  if (!p.description?.trim())
-    issues.push(t("adminProducts.visibilityDescription"));
   return issues;
 }
 
