@@ -20,8 +20,8 @@ const parseJSONField = (value, fallback) => {
 };
 
 const SPEC_PRESET_LOOKUP = {
-  nominal_power: ['Puissance nominale', 'القدرة الاسمية'],
-  nominal_voltage: ['Tension nominale', 'الجهد الاسمي'],
+  nominal_power: ['Puissance nominale', 'الاستطاعة المقدرة'],
+  nominal_voltage: ['Tension nominale', 'التوتر المقدر'],
   controller: ['Contrôleur', 'المتحكم'],
   battery_type: ['Type de batterie', 'نوع البطارية'],
   battery_specs: ['Spécifications de la batterie', 'مواصفات البطارية'],
@@ -34,8 +34,8 @@ const SPEC_PRESET_LOOKUP = {
   tire_specs: ['Spécifications des pneus', 'مواصفات الإطارات'],
   hub_specs: ['Spécifications du moyeu', 'مواصفات المحور'],
   max_load: ['Charge maximale', 'الحمولة القصوى'],
-  wheelbase: ['Empattement', 'المسافة بين المحورين'],
-  body_tank: ['Réservoir de carrosserie', 'خزان الجسم'],
+  wheelbase: ['Empattement', 'المسافة بين العجلات'],
+  body_tank: ['Réservoir de carrosserie', 'سعة خزان الدراجة'],
   seat_height: ['Hauteur du siège', 'ارتفاع المقعد'],
   front_tires: ['Pneus avant', 'الإطارات الأمامية'],
   rear_tires: ['Pneus arrière', 'الإطارات الخلفية'],
