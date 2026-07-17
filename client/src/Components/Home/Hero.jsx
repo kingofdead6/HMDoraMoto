@@ -28,7 +28,7 @@ export default function Hero() {
         </div>
 
         <h1 className="font-['Space_Grotesk'] font-bold text-[clamp(38px,8vw,84px)] leading-[1.03] tracking-[-0.03em] text-zinc-900 m-0 mb-5 [animation:fadeUp_.7s_.1s_both]">
-          <span className="text-red-600">HM</span> {t("hero.title")}
+           {t("hero.title")}
         </h1>
 
         <p className="max-w-[540px] text-[15.5px] sm:text-lg leading-[1.65] text-zinc-500 mt-0 mb-10 [animation:fadeUp_.7s_.2s_both]">
