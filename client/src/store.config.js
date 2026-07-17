@@ -1,8 +1,22 @@
+export function getLocalizedStoreValue(value, language = null) {
+  const resolvedLanguage = language || (typeof window !== "undefined" ? localStorage.getItem("preferred-language") : null) || "fr";
+
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    return value[resolvedLanguage] || value.fr || value.ar || "";
+  }
+
+  return "";
+}
+
 export const store = {
   brand: {
     name: "HM Dora Moto",                       // text logo / brand name shown everywhere
     fullName: "HM Dora Moto",            // used in copyright / formal contexts
-    tagline: "La meilleure source en Algérie pour les motos originales. Meilleurs prix, livraison rapide, paiement à la livraison.",
+    tagline: {
+      fr: "La meilleure source en Algérie pour les motos originales. Meilleurs prix, livraison rapide, paiement à la livraison.",
+      ar: "المصدر الأفضل في الجزائر للدراجات الأصلية. أفضل الأسعار، التسليم السريع، الدفع عند التسليم.",
+    },
     logoText: "HM",                   // text logo fallback (rendered with accent dot)
     logo: "/src/assets/Logo.jpg",        // optional image logo (favicon source in this demo)
     favicon: "/src/assets/Logo.jpg",     // optional favicon (favicon source in this demo)
@@ -36,8 +50,14 @@ export const store = {
     lang:           "fr",
   },
   seo: {
-    title:       "HM Dora Moto",
-    description: "La référence en Algérie pour les motos originales. Meilleurs prix, livraison rapide, paiement à la livraison.",
+    title: {
+      fr: "HM Dora Moto",
+      ar: "HM Dora Moto",
+    },
+    description: {
+      fr: "La référence en Algérie pour les motos originales. Meilleurs prix, livraison rapide, paiement à la livraison.",
+      ar: "المرجع في الجزائر للدراجات الأصلية. أفضل الأسعار، التسليم السريع، الدفع عند التسليم.",
+    },
     ogImage:     "/src/assets/Logo.jpg",
   },
 };

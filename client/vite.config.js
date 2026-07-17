@@ -4,4 +4,5 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react() ,tailwindcss()],
-  assetsInclude: ['**/*.mp4', '**/*.glb', '**/*.gltf'],})
+  assetsInclude: ['**/*.mp4', '**/*.glb', '**/*.gltf'],
+})

@@ -4,6 +4,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../../api";
 import { store } from "../../store.config.js";
 import { toast } from "react-toastify";
+import { useLanguage, getPresetLabel } from "../../i18n.jsx";
 
 // rotating accent palette for spec/feature chips — keeps things
 // playful without every tag looking identical
@@ -15,18 +16,12 @@ const ACCENTS = [
   { bg: "bg-purple-50", text: "text-purple-600", ring: "ring-purple-100", dot: "bg-purple-500" },
 ];
 
-function buildWhatsappLink(product) {
+function buildWhatsappLink(product, language) {
   const productUrl = `${window.location.origin}/${product._id}`;
 
-  const text = `Bonjour,
-
-Je suis intéressé par ce modèle.
-
- Modèle : ${product.name}
-
- ${productUrl}
-
-Est-il disponible ?`;
+  const text = language === "ar"
+    ? `مرحباً،\n\nأنا مهتم بهذا الطراز.\n\nالطراز : ${product.name}\n\n${productUrl}\n\nهل هو متوفر؟`
+    : `Bonjour,\n\nJe suis intéressé par ce modèle.\n\nModèle : ${product.name}\n\n${productUrl}\n\nEst-il disponible ?`;
 
   return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
@@ -72,6 +67,7 @@ function Gallery({ images, name, active, setActive }) {
 
 export default function ProductDetails() {
   const { id } = useParams();
+  const { t, isRTL, language } = useLanguage();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -115,7 +111,7 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-white">
-        <p className="text-zinc-400 font-['Space_Grotesk']">Chargement…</p>
+        <p className="text-zinc-400 font-['Space_Grotesk']">{t("productDetails.loading")}</p>
       </div>
     );
   }
@@ -125,16 +121,16 @@ export default function ProductDetails() {
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white px-5 text-center">
         <p className="text-5xl">🏍</p>
         <h1 className="font-['Space_Grotesk'] font-bold text-2xl text-zinc-900 m-0">
-          Produit introuvable
+          {t("productDetails.notFoundTitle")}
         </h1>
         <p className="text-zinc-500 text-sm max-w-xs">
-          Ce modèle n'existe plus ou a été retiré du catalogue.
+          {t("productDetails.notFoundMessage")}
         </p>
         <Link
           to="/"
           className="mt-2 px-6 py-3 rounded-full bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-sm no-underline transition-colors duration-200"
         >
-          Retour à l'accueil
+          {t("productDetails.backHome")}
         </Link>
       </div>
     );
@@ -149,10 +145,10 @@ export default function ProductDetails() {
         {/* breadcrumb */}
         <div className="flex items-center gap-2 mb-8 font-['JetBrains_Mono'] text-[12px] text-zinc-400">
           <Link to="/" className="text-zinc-400 no-underline hover:text-zinc-700 transition-colors">
-            Accueil
+            {t("productDetails.breadcrumbHome")}
           </Link>
           <span>/</span>
-          <span className="text-zinc-500">{product.category?.name || "Scooter"}</span>
+          <span className="text-zinc-500">{product.category?.name || t("productDetails.categoryFallback")}</span>
           <span>/</span>
           <span className="text-zinc-700">{product.name}</span>
         </div>
@@ -170,11 +166,11 @@ export default function ProductDetails() {
           <div className="lg:sticky lg:top-8 lg:self-start">
             <div className="flex items-center gap-2 mb-4">
               <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-red-50 text-red-600 font-['JetBrains_Mono'] text-[11px] tracking-[.06em] font-medium uppercase">
-                {product.category?.name || "Scooter"}
+                {product.category?.name || t("productDetails.categoryFallback")}
               </span>
               {!product.available && (
                 <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-zinc-100 text-zinc-500 font-['JetBrains_Mono'] text-[11px] tracking-[.06em] font-medium uppercase">
-                  Indisponible
+                  {t("productDetails.unavailable")}
                 </span>
               )}
             </div>
@@ -184,7 +180,7 @@ export default function ProductDetails() {
             </h1>
 
             <p className="font-['Space_Grotesk'] font-bold text-[26px] text-red-600 m-0 mb-6">
-              {product.price != null ? `${product.price.toLocaleString()} DA` : "Prix sur demande"}
+              {product.price != null ? `${product.price.toLocaleString()} DA` : t("productDetails.priceOnDemand")}
             </p>
 
             {product.description && (
@@ -194,12 +190,12 @@ export default function ProductDetails() {
             )}
 
             
-             <a href={buildWhatsappLink(product)}
+             <a href={buildWhatsappLink(product, language)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2.5 w-full px-8 py-4 rounded-full bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline transition-all duration-200 shadow-[0_16px_36px_-14px_rgba(220,38,38,0.6)] mb-8"
             >
-              Commander via WhatsApp
+              {t("productDetails.contact")}
             </a>
 
             {/* quick spec chips — colorful, scannable */}
@@ -213,7 +209,7 @@ export default function ProductDetails() {
                       className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full ${a.bg} ${a.text} ring-1 ${a.ring} text-[12.5px] font-medium`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${a.dot}`} />
-                      {s.label}: <span className="font-bold">{s.value}</span>
+                      {getPresetLabel("spec", s.label, language)}: <span className="font-bold">{s.value}</span>
                     </span>
                   );
                 })}
@@ -232,7 +228,7 @@ export default function ProductDetails() {
         {product.specs?.length > 0 && (
           <div className="mb-14">
             <h2 className="font-['Space_Grotesk'] font-bold text-[22px] text-zinc-900 m-0 mb-5">
-              Caractéristiques
+              {t("productDetails.characteristics")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {product.specs.map((s, i) => {
@@ -244,7 +240,7 @@ export default function ProductDetails() {
                   >
                     <span className="flex items-center gap-2.5 text-zinc-500 text-[13.5px]">
                       <span className={`w-2 h-2 rounded-full ${a.dot}`} />
-                      {s.label}
+                      {getPresetLabel("spec", s.label, language)}
                     </span>
                     <span className="text-zinc-900 font-['Space_Grotesk'] font-bold text-[14px]">
                       {s.value}
@@ -260,7 +256,7 @@ export default function ProductDetails() {
         {product.features?.length > 0 && (
           <div className="mb-16">
             <h2 className="font-['Space_Grotesk'] font-bold text-[22px] text-zinc-900 m-0 mb-5">
-              Équipements
+              {t("productDetails.equipments")}
             </h2>
             <div className="flex flex-wrap gap-2.5">
               {product.features.map((f, i) => {
@@ -270,7 +266,7 @@ export default function ProductDetails() {
                     key={i}
                     className={`text-[13px] px-4 py-2.5 rounded-full ${a.bg} ${a.text} ring-1 ${a.ring} font-['Space_Grotesk'] font-medium`}
                   >
-                    {f}
+                    {getPresetLabel("feature", f, language)}
                   </span>
                 );
               })}
@@ -284,15 +280,15 @@ export default function ProductDetails() {
           <div className="absolute -bottom-24 -right-16 w-72 h-72 rounded-full bg-amber-200/40 blur-[80px]" />
           <div className="relative">
             <h2 className="font-['Space_Grotesk'] font-bold text-[clamp(24px,4vw,36px)] leading-[1.15] text-zinc-900 max-w-[520px] mx-auto m-0 mb-7">
-              Prêt à rouler avec le {product.name} ?
+              {t("productDetails.ready")} {product.name} ?
             </h2>
             
-              <a href={buildWhatsappLink(product)}
+              <a href={buildWhatsappLink(product, language)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2.5 px-9 py-4 rounded-full bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline transition-all duration-200 shadow-[0_16px_36px_-14px_rgba(220,38,38,0.6)]"
             >
-              Commander via WhatsApp
+              {t("productDetails.contact")}
             </a>
           </div>
         </div>

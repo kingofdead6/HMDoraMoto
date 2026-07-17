@@ -7,8 +7,10 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API_BASE_URL } from "../../api";
 import logo from "../assets/Logo.jpg";
+import { useLanguage } from "../i18n.jsx";
 
 export default function Login() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,10 +21,10 @@ export default function Login() {
 
   const validate = () => {
     const e = {};
-    if (!email.trim()) e.email = "Veuillez entrer votre email.";
-    else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Format d'email invalide.";
-    if (!password) e.password = "Veuillez entrer votre mot de passe.";
-    else if (password.length < 6) e.password = "Le mot de passe doit contenir au moins 6 caractères.";
+    if (!email.trim()) e.email = t("auth.loginEmailRequired");
+    else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = t("auth.loginEmailInvalid");
+    if (!password) e.password = t("auth.loginPasswordRequired");
+    else if (password.length < 6) e.password = t("auth.loginPasswordTooShort");
     return e;
   };
 
@@ -45,7 +47,7 @@ export default function Login() {
 
         window.dispatchEvent(new Event("authChanged"));
         setErrors({});
-        toast.success("Connexion réussie !");
+        toast.success(t("auth.loginSuccess"));
 
         if (usertype === "admin" || usertype === "superadmin") {
           navigate("/admin/products");
@@ -53,7 +55,7 @@ export default function Login() {
           navigate("/");
         }
       } catch (error) {
-        const message = error.response?.data?.message || "Échec de la connexion.";
+        const message = error.response?.data?.message || t("auth.loginFailed");
         setErrors({ form: message });
         toast.error(message);
       } finally {
@@ -83,10 +85,10 @@ export default function Login() {
             className="w-14 h-14 mx-auto mb-5 rounded-full object-contain shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
           />
           <h1 className="font-['Space_Grotesk'] font-bold text-[clamp(30px,6vw,40px)] tracking-[-0.02em] text-zinc-900 m-0">
-            Espace Admin
+            {t("auth.adminTitle")}
           </h1>
           <p className="mt-3 text-[15px] text-zinc-500 font-['Manrope']">
-            Connectez-vous pour gérer HM Dora Moto
+            {t("auth.adminSubtitle")}
           </p>
         </div>
 
@@ -111,7 +113,7 @@ export default function Login() {
             {/* Email */}
             <div>
               <label className="block font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase mb-2.5">
-                Adresse email
+                {t("auth.emailLabel")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-4 flex items-center text-zinc-300 pointer-events-none">
@@ -121,7 +123,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   className={`w-full pl-11 pr-4 py-[13px] rounded-[12px] bg-zinc-50 border text-zinc-900 text-[15px] outline-none font-['Manrope'] transition-colors duration-200 focus:border-red-600/60 placeholder:text-zinc-300 ${
                     errors.email ? "border-red-300" : "border-zinc-200"
                   }`}
@@ -135,7 +137,7 @@ export default function Login() {
             {/* Password */}
             <div>
               <label className="block font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase mb-2.5">
-                Mot de passe
+                {t("auth.passwordLabel")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-4 flex items-center text-zinc-300 pointer-events-none">
@@ -145,7 +147,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t("auth.passwordPlaceholder")}
                   className={`w-full pl-11 pr-11 py-[13px] rounded-[12px] bg-zinc-50 border text-zinc-900 text-[15px] outline-none font-['Manrope'] transition-colors duration-200 focus:border-red-600/60 placeholder:text-zinc-300 ${
                     errors.password ? "border-red-300" : "border-zinc-200"
                   }`}
@@ -153,7 +155,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                   className="absolute inset-y-0 right-4 flex items-center text-zinc-300 hover:text-zinc-600 bg-transparent border-none cursor-pointer transition-colors duration-200"
                 >
                   {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
@@ -177,7 +179,7 @@ export default function Login() {
                   : "bg-red-600 hover:bg-red-700 cursor-pointer shadow-[0_16px_40px_-12px_rgba(220,38,38,0.55)]"
               }`}
             >
-              {loading ? "Connexion..." : "Se connecter"}
+              {loading ? t("auth.loggingIn") : t("auth.loginButton")}
             </motion.button>
           </form>
         </motion.div>

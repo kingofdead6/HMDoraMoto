@@ -1,7 +1,9 @@
 import logo from "../../assets/Logo.jpg";
 import { store } from "../../store.config.js";
+import { useLanguage } from "../../i18n.jsx";
 
 export default function Hero() {
+  const { t, isRTL } = useLanguage();
   const scrollToProducts = () => {
     document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -19,19 +21,18 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-5 min-h-screen py-24">
+      <div className={`relative z-10 flex flex-col items-center justify-center text-center px-5 min-h-screen py-24 ${isRTL ? "rtl" : ""}`}>
         <div className="inline-flex items-center   rounded-full bg-red-50 border border-red-100 mb-7 [animation:fadeUp_.6s_both]">
           <img src={logo} alt="HM Dora Moto" className="w-36 h-36 rounded-full object-cover" />
          
         </div>
 
         <h1 className="font-['Space_Grotesk'] font-bold text-[clamp(38px,8vw,84px)] leading-[1.03] tracking-[-0.03em] text-zinc-900 m-0 mb-5 [animation:fadeUp_.7s_.1s_both]">
-          <span className="text-red-600">HM</span> Dora Moto
+          <span className="text-red-600">HM</span> {t("hero.title")}
         </h1>
 
         <p className="max-w-[540px] text-[15.5px] sm:text-lg leading-[1.65] text-zinc-500 mt-0 mb-10 [animation:fadeUp_.7s_.2s_both]">
-          Scooters électriques fiables, 
-          Découvrez la gamme et commandez directement sur WhatsApp.
+          {t("hero.subtitle")}
         </p>
 
         <div className="flex gap-3 flex-wrap justify-center mb-10 [animation:fadeUp_.7s_.3s_both]">
@@ -39,7 +40,7 @@ export default function Hero() {
             onClick={scrollToProducts}
             className="inline-flex items-center gap-2.5 px-7 py-4 border-none rounded-[14px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-[16px] cursor-pointer shadow-[0_20px_45px_-18px_rgba(220,38,38,0.55)] transition-colors duration-200"
           >
-            Voir les modèles <span className="text-lg">↓</span>
+            {t("hero.cta")} <span className="text-lg">↓</span>
           </button>
 
           
@@ -48,18 +49,18 @@ export default function Hero() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2.5 px-7 py-4 rounded-[14px] bg-white border border-zinc-200 text-zinc-800 font-['Space_Grotesk'] font-bold text-[16px] cursor-pointer transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50"
           >
-            WhatsApp
+            {t("hero.whatsapp")}
           </a>
         </div>
 
         <div className="flex items-center gap-x-5 gap-y-2 flex-wrap justify-center [animation:fadeUp_.7s_.4s_both]">
-          {["Garantie officielle", "Paiement à la livraison"].map((t, i) => (
+          {t("hero.features").map((item, i) => (
             <span
-              key={t}
+              key={item}
               className="flex items-center gap-2 text-[12.5px] font-['JetBrains_Mono'] text-zinc-400"
             >
               {i !== 0 && <span className="w-1 h-1 rounded-full bg-zinc-300" />}
-              {t}
+              {item}
             </span>
           ))}
         </div>
@@ -68,7 +69,7 @@ export default function Hero() {
       {/* scroll cue */}
       <button
         onClick={scrollToProducts}
-        aria-label="Défiler vers les produits"
+        aria-label={t("hero.scrollLabel")}
         className="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-white border border-zinc-200 shadow-sm flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:border-zinc-300 transition-colors [animation:floatySlow_2.4s_ease-in-out_infinite]"
       >
         ↓

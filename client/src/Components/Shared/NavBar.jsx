@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { store } from "../../store.config.js";
 import logo from "../../assets/Logo.jpg";
+import { useLanguage } from "../../i18n.jsx";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -10,6 +11,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, language, setLanguage, isRTL } = useLanguage();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
@@ -50,11 +52,11 @@ export default function Navbar() {
 
   const navItems = isAdmin
     ? [
-        { label: "Produits", to: "/admin/products" },
+        { label: t("nav.adminProducts"), to: "/admin/products" },
       ]
     : [
-        { label: "Accueil", to: "/" },
-        { label: "Products", to: "/#products" },
+        { label: t("nav.home"), to: "/" },
+        { label: t("nav.products"), to: "/#products" },
       ];
 
   const isActive = (item) => {
@@ -74,15 +76,15 @@ export default function Navbar() {
           scrolled ? "border-zinc-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" : "border-zinc-100"
         }`}
       >
-        <div className="max-w-[1280px] mx-auto px-5 sm:px-[26px] py-3 flex items-center justify-between gap-6">
-          <Link to="/" className="flex items-center gap-[10px] no-underline shrink-0">
+        <div className={`max-w-[1280px] mx-auto px-5 sm:px-[26px] py-3 flex items-center justify-between gap-6 ${isRTL ? "flex-row-reverse" : ""}`}>
+          <Link to="/" className={`flex items-center gap-[10px] no-underline shrink-0 ${isRTL ? "flex-row-reverse" : ""}`}>
             <img src={logo} alt={store.brand.name} className="h-9 w-9 object-contain rounded-full" />
             <span className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl tracking-[-0.02em] text-zinc-900">
               {store.brand.name}
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1.5">
+          <nav className={`hidden md:flex items-center gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
             {navItems.map((n) => {
               const active = isActive(n);
               return (
@@ -101,7 +103,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          <div className="flex items-center gap-2.5">
+          <div className={`flex items-center gap-2.5 ${isRTL ? "flex-row-reverse" : ""}`}>
             {!isAdmin && (
               <a
                 href={`https://wa.me/${store.contact.whatsapp}`}
@@ -109,22 +111,30 @@ export default function Navbar() {
                 rel="noopener noreferrer"
                 className="hidden sm:inline-flex items-center gap-2 font-['Manrope'] font-semibold text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-[9px] rounded-[12px] transition-colors duration-200 no-underline"
               >
-                WhatsApp
+                {t("nav.whatsapp")}
               </a>
             )}
+
+            <button
+              type="button"
+              onClick={() => setLanguage(language === "fr" ? "ar" : "fr")}
+              className="font-['Manrope'] font-semibold text-sm text-zinc-600 bg-white border border-zinc-200 px-3 py-[9px] rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms]"
+            >
+              {language === "fr" ? t("nav.arabic") : t("nav.french")}
+            </button>
 
             {isAdmin && (
               <button
                 onClick={handleLogout}
                 className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-[9px] rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms]"
               >
-                Déconnexion
+                {t("nav.logout")}
               </button>
             )}
 
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Menu"
+              aria-label={t("nav.menu")}
               className="md:hidden flex flex-col gap-1 items-center justify-center w-[42px] h-[42px] rounded-[12px] bg-zinc-100 border border-zinc-200 cursor-pointer text-zinc-700"
             >
               {[0, 1, 2].map((i) => (
@@ -161,7 +171,7 @@ export default function Navbar() {
                 rel="noopener noreferrer"
                 className="font-['Manrope'] font-semibold text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-[12px] transition-colors duration-200 no-underline text-center"
               >
-                WhatsApp
+                {t("nav.whatsapp")}
               </a>
             )}
             {isAdmin && (
@@ -169,7 +179,7 @@ export default function Navbar() {
                 onClick={handleLogout}
                 className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-2 rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms] text-left"
               >
-                Déconnexion
+                {t("nav.logout")}
               </button>
             )}
           </div>

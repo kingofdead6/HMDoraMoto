@@ -4,13 +4,17 @@ import { API_BASE_URL } from "../../api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { store } from "../store.config.js";
+import { useLanguage, getPresetLabel } from "../i18n.jsx";
 
-function buildWhatsappLink(product) {
-  const text = `Bonjour, je suis intéressé par le modèle "${product.name}". Est-il disponible ?`;
+function buildWhatsappLink(product, language, t) {
+  const text = language === "ar"
+    ? `مرحباً، أنا مهتم بالطراز "${product.name}". هل هو متوفر؟`
+    : `Bonjour, je suis intéressé par le modèle "${product.name}". Est-il disponible ?`;
   return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
 function ProductModal({ product, onClose }) {
+  const { t, isRTL, language } = useLanguage();
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -35,7 +39,7 @@ function ProductModal({ product, onClose }) {
       >
         <button
           onClick={onClose}
-          aria-label="Fermer"
+          aria-label={t("products.modalClose")}
           className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 flex items-center justify-center text-lg shadow-sm"
         >
           ✕
@@ -53,14 +57,14 @@ function ProductModal({ product, onClose }) {
 
         <div className="p-6 sm:p-8">
           <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-red-600 uppercase m-0 mb-2">
-            {product.category?.name || "Scooter"}
+            {product.category?.name || t("products.categoryFallback")}
           </p>
           <h2 className="font-['Space_Grotesk'] font-bold text-[26px] sm:text-[30px] text-zinc-900 m-0 mb-2">
             {product.name}
           </h2>
 
           <p className="font-['Space_Grotesk'] font-bold text-xl text-zinc-900 mb-5">
-            {product.price ? `${product.price.toLocaleString()} DA` : "Prix sur demande"}
+            {product.price ? `${product.price.toLocaleString()} DA` : t("products.priceOnDemand")}
           </p>
 
           {product.description && (
@@ -72,7 +76,7 @@ function ProductModal({ product, onClose }) {
           {hasDimensions && (
             <div className="mb-6">
               <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-2">
-                Dimensions
+                {t("products.dimensions")}
               </p>
               <p className="text-[14px] text-zinc-700 m-0">
                 {length} × {width} × {height} mm
@@ -83,7 +87,7 @@ function ProductModal({ product, onClose }) {
           {product.specs?.length > 0 && (
             <div className="mb-6">
               <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-3">
-                Caractéristiques
+                {t("products.characteristics")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                 {product.specs.map((s, i) => (
@@ -91,7 +95,7 @@ function ProductModal({ product, onClose }) {
                     key={i}
                     className="flex justify-between items-center py-2 border-b border-zinc-100 text-[13.5px]"
                   >
-                    <span className="text-zinc-500">{s.label}</span>
+                    <span className="text-zinc-500">{getPresetLabel("spec", s.label, language)}</span>
                     <span className="text-zinc-800 font-medium">{s.value}</span>
                   </div>
                 ))}
@@ -102,7 +106,7 @@ function ProductModal({ product, onClose }) {
           {product.features?.length > 0 && (
             <div className="mb-7">
               <p className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-3">
-                Équipements
+                {t("products.features")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {product.features.map((f, i) => (
@@ -110,7 +114,7 @@ function ProductModal({ product, onClose }) {
                     key={i}
                     className="text-[12.5px] px-3 py-[7px] rounded-full bg-zinc-100 border border-zinc-200 text-zinc-700"
                   >
-                    {f}
+                    {getPresetLabel("feature", f, language)}
                   </span>
                 ))}
               </div>
@@ -118,12 +122,12 @@ function ProductModal({ product, onClose }) {
           )}
 
           <a
-            href={buildWhatsappLink(product)}
+            href={buildWhatsappLink(product, language, t)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-4 rounded-[14px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-[15.5px] transition-colors duration-200"
           >
-            Commander via WhatsApp
+            {t("products.contact")}
           </a>
         </div>
       </div>
@@ -133,6 +137,7 @@ function ProductModal({ product, onClose }) {
 
 function ProductCard({ product }) {
   const navigate = useNavigate();
+  const { t, isRTL } = useLanguage();
 
   return (
     <div
@@ -155,13 +160,13 @@ function ProductCard({ product }) {
 
       {!product.available && (
         <div className="absolute top-3 right-3 bg-zinc-900 text-white text-xs px-3 py-1 rounded-full">
-          Indisponible
+          {t("products.unavailable")}
         </div>
       )}
 
       <div className="p-4">
         <p className="font-['JetBrains_Mono'] text-[10.5px] tracking-[.06em] text-red-600 uppercase m-0 mb-1">
-          {product.category?.name || "Scooter"}
+          {product.category?.name || t("products.categoryFallback")}
         </p>
 
         <h3 className="font-['Space_Grotesk'] font-bold text-[16.5px] text-zinc-900 m-0 mb-2 leading-snug">
@@ -172,11 +177,11 @@ function ProductCard({ product }) {
           <span className="font-['Space_Grotesk'] font-bold text-[15px] text-zinc-900">
             {product.price
               ? `${product.price.toLocaleString()} DA`
-              : "Sur demande"}
+              : t("products.priceOnDemand")}
           </span>
 
           <span className="text-[12.5px] font-semibold text-zinc-400 group-hover:text-red-600 transition-colors">
-            Détails →
+            {t("products.details")} →
           </span>
         </div>
       </div>
@@ -185,6 +190,7 @@ function ProductCard({ product }) {
 }
 
 export default function ProductsSection() {
+  const { t, isRTL } = useLanguage();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -197,7 +203,7 @@ export default function ProductsSection() {
         });
         setProducts(res.data || []);
       } catch {
-        toast.error("Impossible de charger les produits");
+        toast.error(t("adminProducts.loadError"));
       } finally {
         setLoading(false);
       }
@@ -219,18 +225,18 @@ export default function ProductsSection() {
       <div className="max-w-[1280px] mx-auto">
         <div className="text-center mb-12">
           <p className="font-['JetBrains_Mono'] text-[12px] tracking-[.12em] text-red-600 uppercase m-0 mb-3">
-            Notre gamme
+            {t("products.heading")}
           </p>
           <h2 className="font-['Space_Grotesk'] font-bold text-[clamp(28px,4.5vw,44px)] text-zinc-900 m-0">
-            Nos scooters
+            {t("products.title")}
           </h2>
         </div>
 
         {loading ? (
-          <p className="text-center text-zinc-400 font-['Space_Grotesk']">Chargement…</p>
+          <p className="text-center text-zinc-400 font-['Space_Grotesk']">{t("products.loading")}</p>
         ) : sorted.length === 0 ? (
           <p className="text-center text-zinc-400 font-['Space_Grotesk']">
-            Aucun produit disponible pour le moment.
+            {t("products.empty")}
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

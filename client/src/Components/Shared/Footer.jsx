@@ -1,10 +1,14 @@
 import { FaFacebookF, FaTiktok, FaPhone, FaWhatsapp, FaMapMarkerAlt } from "react-icons/fa";
-import { store } from "../../store.config.js";
+import { getLocalizedStoreValue, store } from "../../store.config.js";
 import logo from "../../assets/Logo.jpg";
+import { useLanguage } from "../../i18n.jsx";
 
 export default function Footer() {
+  const { t, isRTL, language } = useLanguage();
+  const tagline = getLocalizedStoreValue(store.brand.tagline, language);
+
   return (
-    <footer className="bg-white border-t border-zinc-100 px-5 sm:px-[26px] pt-16 pb-8">
+    <footer className={`bg-white border-t border-zinc-100 px-5 sm:px-[26px] pt-16 pb-8 ${isRTL ? "text-right" : "text-left"}`}>
       <div className="max-w-[1280px] mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-14">
           <div>
@@ -14,14 +18,14 @@ export default function Footer() {
                 {store.brand.name}
               </span>
             </div>
-            <p className="text-sm leading-[1.65] text-zinc-500 m-0">
-              {store.brand.tagline}
+            <p className={`text-sm leading-[1.65] text-zinc-500 m-0 ${isRTL ? "text-right" : "text-left"}`}>
+              {tagline}
             </p>
           </div>
 
           <div>
             <h3 className="font-['JetBrains_Mono'] text-[11px] tracking-[.08em] text-zinc-400 uppercase m-0 mb-4">
-              Contact
+              {t("nav.contact")}
             </h3>
             <div className="flex flex-col gap-3 text-sm text-zinc-500">
               <a
@@ -38,7 +42,7 @@ export default function Footer() {
                 className="inline-flex items-center gap-2 text-zinc-500 no-underline transition-colors duration-200 hover:text-zinc-900"
               >
                 <FaWhatsapp className="text-sm" />
-                WhatsApp
+                {t("nav.whatsapp")}
               </a>
               <a
                 href="https://www.google.com/maps/search/?api=1&query=36.772934,3.058845"
@@ -54,10 +58,10 @@ export default function Footer() {
 
           <div className="bg-red-50 border border-red-100 rounded-[18px] p-6">
             <p className="font-['Space_Grotesk'] font-bold text-base text-zinc-900 m-0 mb-2">
-              Follow Us
+              {t("nav.followUs")}
             </p>
             <p className="text-[13px] text-zinc-500 m-0 mb-4 leading-[1.5]">
-              Suivez-nous sur Facebook et TikTok pour voir nos derniers modèles.
+              {t("footer.message")}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -86,7 +90,7 @@ export default function Footer() {
           <p className="font-['JetBrains_Mono'] text-xs text-zinc-400 m-0">
             © {new Date().getFullYear()} {store.brand.fullName}. Tous droits réservés.
           </p>
-          <p className="font-['JetBrains_Mono'] text-xs text-zinc-400 m-0"> Algérie</p>
+          <p className="font-['JetBrains_Mono'] text-xs text-zinc-400 m-0">{t("nav.location")}</p>
         </div>
       </div>
     </footer>

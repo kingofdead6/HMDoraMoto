@@ -4,6 +4,13 @@ import axios from "axios";
 import { API_BASE_URL } from "../../../api.js";
 import { toast } from "react-toastify";
 import { Plus, Search, Trash2, Edit, X, AlertTriangle, Check } from "lucide-react";
+import {
+  useLanguage,
+  SPEC_PRESET_OPTIONS,
+  FEATURE_PRESET_OPTIONS,
+  getPresetLabel,
+  normalizePresetValue,
+} from "../../i18n.jsx";
 
 const MAX_IMAGES = 8;
 const MAX_IMAGE_MB = 5;
@@ -13,44 +20,6 @@ const authHeaders = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
-
-const SPEC_PRESETS = [
-  "Puissance nominale",
-  "Tension nominale",
-  "Contrôleur",
-  "Type de batterie",
-  "Spécifications de la batterie",
-  "Vitesse maximale",
-  "Autonomie",
-  "Type de moteur",
-  "Angle de pente",
-  "Temps de charge",
-  "Freins avant / arrière",
-  "Spécifications des pneus",
-  "Spécifications du moyeu",
-  "Charge maximale",
-  "Empattement",
-  "Réservoir de carrosserie",
-  "Hauteur du siège",
-  "Pneus avant",
-  "Pneus arrière",
-  "Jante avant",
-  "Suspension avant",
-  "Amortisseur arrière",
-  "Phares",
-  "Instruments",
-];
-
-// "Autres configurations" from the brochures
-const FEATURE_PRESETS = [
-  "Réparation en un clic",
-  "Frein de stationnement en position P",
-  "Trois vitesses",
-  "Marche arrière",
-  "Port USB",
-  "Démarrage intelligent sans clé",
-  "Régulateur de vitesse",
-];
 
 const emptyForm = {
   name: "",
@@ -67,16 +36,16 @@ const emptyForm = {
 // Checks that mirror what actually keeps a product from looking right on
 // the public site, so the admin gets a plain-language reason instead of
 // silently wondering why something looks off.
-function getVisibilityIssues(p) {
+function getVisibilityIssues(p, t) {
   const issues = [];
-  if (!p.name?.trim()) issues.push("Le nom du produit est manquant.");
-  if (!p.available) issues.push("Le produit est marqué « indisponible » — il n'apparaîtra pas sur le site.");
+  if (!p.name?.trim()) issues.push(t("adminProducts.visibilityName"));
+  if (!p.available) issues.push(t("adminProducts.visibilityAvailability"));
   if (!p.images || p.images.length === 0)
-    issues.push("Aucune image n'a été ajoutée — la fiche affichera un cadre vide.");
+    issues.push(t("adminProducts.visibilityImages"));
   if (!p.specs || p.specs.length === 0)
-    issues.push("Aucune caractéristique technique renseignée.");
+    issues.push(t("adminProducts.visibilitySpecs"));
   if (!p.description?.trim())
-    issues.push("Aucune description — la fiche produit paraîtra incomplète.");
+    issues.push(t("adminProducts.visibilityDescription"));
   return issues;
 }
 
@@ -110,6 +79,7 @@ function TextField({ label, hint, error, ...props }) {
 // everything else (navbar included), no matter the surrounding stacking
 // context. Also doubles as the "why isn't this visible" explainer.
 function VisibilityIssuesPopup({ issues, onClose }) {
+  const { t } = useLanguage();
   return createPortal(
     <div
       onClick={onClose}
@@ -124,7 +94,7 @@ function VisibilityIssuesPopup({ issues, onClose }) {
             <AlertTriangle size={16} className="text-amber-500" />
           </div>
           <h3 className="font-bold text-[16px] text-gray-900 m-0">
-            Ce produit a des points à corriger
+            {t("adminProducts.visibilityTitle")}
           </h3>
         </div>
         <ul className="flex flex-col gap-2.5 mb-5">
@@ -139,7 +109,7 @@ function VisibilityIssuesPopup({ issues, onClose }) {
           onClick={onClose}
           className="w-full py-2.5 rounded-[10px] bg-gray-900 hover:bg-black text-white font-semibold text-sm transition-colors"
         >
-          Compris
+          {t("adminProducts.visibilityConfirm")}
         </button>
       </div>
     </div>,
@@ -148,7 +118,16 @@ function VisibilityIssuesPopup({ issues, onClose }) {
 }
 
 function ProductForm({ initial, onSubmit, onCancel, saving }) {
-  const [form, setForm] = useState(initial || emptyForm);
+  const { t, language } = useLanguage();
+  const normalizeForm = (value) => ({
+    ...value,
+    specs: (value?.specs || []).map((spec) => ({
+      ...spec,
+      label: normalizePresetValue("spec", spec.label),
+    })),
+    features: (value?.features || []).map((feature) => normalizePresetValue("feature", feature)),
+  });
+  const [form, setForm] = useState(() => normalizeForm(initial || emptyForm));
   const [existingImages, setExistingImages] = useState(initial?.images || []);
   const [newFiles, setNewFiles] = useState([]);
   const [removedImageIds, setRemovedImageIds] = useState([]);
@@ -168,7 +147,16 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
   const liveIssues = getVisibilityIssues({
     ...form,
     images: [...existingImages, ...newFiles],
-  });
+  }, t);
+
+  const specPresets = Object.keys(SPEC_PRESET_OPTIONS).map((key) => ({
+    key,
+    label: getPresetLabel("spec", key, language),
+  }));
+  const featurePresets = Object.keys(FEATURE_PRESET_OPTIONS).map((key) => ({
+    key,
+    label: getPresetLabel("feature", key, language),
+  }));
 
   const addSpec = (label = "") => set("specs", [...form.specs, { label, value: "" }]);
   const updateSpec = (i, key, value) => {
@@ -177,19 +165,19 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     set("specs", next);
   };
   const removeSpec = (i) => set("specs", form.specs.filter((_, idx) => idx !== i));
-  const activeSpecLabels = new Set(form.specs.map((s) => s.label));
-  const togglePresetSpec = (label) => {
-    if (activeSpecLabels.has(label)) {
-      set("specs", form.specs.filter((s) => s.label !== label));
+  const activeSpecKeys = new Set(form.specs.map((s) => normalizePresetValue("spec", s.label)));
+  const togglePresetSpec = (key) => {
+    if (activeSpecKeys.has(key)) {
+      set("specs", form.specs.filter((s) => normalizePresetValue("spec", s.label) !== key));
     } else {
-      addSpec(label);
+      addSpec(key);
     }
   };
 
-  const activeFeatureSet = new Set(form.features);
+  const activeFeatureSet = new Set(form.features.map((feature) => normalizePresetValue("feature", feature)));
   const toggleFeature = (feature) => {
     if (activeFeatureSet.has(feature)) {
-      set("features", form.features.filter((f) => f !== feature));
+      set("features", form.features.filter((f) => normalizePresetValue("feature", f) !== feature));
     } else {
       set("features", [...form.features, feature]);
     }
@@ -201,9 +189,10 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     set("features", next);
   };
   const removeFeature = (i) => set("features", form.features.filter((_, idx) => idx !== i));
+  const featurePresetSet = new Set(Object.keys(FEATURE_PRESET_OPTIONS));
   const customFeatures = form.features
     .map((f, i) => ({ f, i }))
-    .filter(({ f }) => !FEATURE_PRESETS.includes(f));
+    .filter(({ f }) => !featurePresetSet.has(normalizePresetValue("feature", f)));
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
@@ -213,15 +202,15 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     if (files.length > remainingSlots) {
       toast.error(
         remainingSlots > 0
-          ? `8 images maximum — il ne reste que ${remainingSlots} emplacement(s).`
-          : "8 images maximum atteintes."
+          ? t("adminProducts.maxImages", { count: remainingSlots })
+          : t("adminProducts.maxImagesReached")
       );
       return;
     }
 
     const oversized = files.find((f) => f.size > MAX_IMAGE_MB * 1024 * 1024);
     if (oversized) {
-      toast.error(`"${oversized.name}" dépasse ${MAX_IMAGE_MB} Mo.`);
+      toast.error(t("adminProducts.imageTooLarge", { name: oversized.name, size: MAX_IMAGE_MB }));
       return;
     }
 
@@ -249,8 +238,8 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const errors = {};
-    if (!form.name.trim()) errors.name = "Le nom du produit est requis.";
-    if (form.price !== "" && Number(form.price) < 0) errors.price = "Le prix ne peut pas être négatif.";
+    if (!form.name.trim()) errors.name = t("adminProducts.productNameRequired");
+    if (form.price !== "" && Number(form.price) < 0) errors.price = t("adminProducts.priceNegative");
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -273,10 +262,10 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         </button>
 
         <h2 className="font-bold text-xl text-gray-900 m-0 mb-1">
-          {initial ? "Modifier le produit" : "Nouveau produit"}
+          {initial ? t("adminProducts.modalTitleEdit") : t("adminProducts.modalTitleNew")}
         </h2>
         <p className="text-[13px] text-gray-400 m-0 mb-6">
-          Remplissez les champs ci-dessous — les caractéristiques courantes sont déjà listées.
+          {t("adminProducts.modalSubtitle")}
         </p>
 
         {liveIssues.length > 0 && (
@@ -284,7 +273,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
             <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-[12.5px] font-semibold text-amber-800 m-0 mb-1">
-                À corriger avant publication idéale :
+                {t("adminProducts.modalLiveIssues")}
               </p>
               <ul className="m-0 pl-4 text-[12.5px] text-amber-700 space-y-0.5">
                 {liveIssues.map((issue, i) => (
@@ -296,7 +285,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         )}
 
         <TextField
-          label="Nom du modèle"
+          label={t("adminProducts.fieldName")}
           value={form.name}
           onChange={(e) => set("name", e.target.value)}
           placeholder="Ex : H360-Nova"
@@ -304,8 +293,8 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         />
 
         <TextField
-          label="Prix (DA)"
-          hint="Laisser vide pour afficher « Sur demande »"
+          label={t("adminProducts.fieldPrice")}
+          hint={t("adminProducts.fieldPriceHint")}
           type="number"
           value={form.price}
           onChange={(e) => set("price", e.target.value)}
@@ -313,7 +302,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
           error={fieldErrors.price}
         />
 
-        <Field label="Description">
+        <Field label={t("adminProducts.fieldDescription")}>
           <textarea
             rows={3}
             value={form.description}
@@ -323,23 +312,23 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         </Field>
 
         <span className="block font-semibold text-[12px] tracking-[.02em] text-gray-500 uppercase mb-1.5">
-          Dimensions extérieures du véhicule (mm)
+          {t("adminProducts.fieldDimensions")}
         </span>
         <div className="grid grid-cols-3 gap-3 mb-6">
           <TextField
-            label="Longueur"
+            label={t("adminProducts.fieldLength")}
             type="number"
             value={form.dimensions.length}
             onChange={(e) => set("dimensions", { ...form.dimensions, length: e.target.value })}
           />
           <TextField
-            label="Largeur"
+            label={t("adminProducts.fieldWidth")}
             type="number"
             value={form.dimensions.width}
             onChange={(e) => set("dimensions", { ...form.dimensions, width: e.target.value })}
           />
           <TextField
-            label="Hauteur"
+            label={t("adminProducts.fieldHeight")}
             type="number"
             value={form.dimensions.height}
             onChange={(e) => set("dimensions", { ...form.dimensions, height: e.target.value })}
@@ -349,9 +338,9 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         {/* toggles */}
         <div className="flex flex-wrap gap-4 mb-7 pb-6 border-b border-gray-100">
           {[
-            ["available", "Disponible"],
-            ["featured", "Mis en avant"],
-            ["showOnMainPage", "Priorité page d'accueil"],
+            ["available", t("adminProducts.toggleAvailable")],
+            ["featured", t("adminProducts.toggleFeatured")],
+            ["showOnMainPage", t("adminProducts.toggleMainPage")],
           ].map(([key, label]) => (
             <label key={key} className="flex items-center gap-2 cursor-pointer">
               <input
@@ -368,16 +357,16 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         {/* spec presets — configuration de base */}
         <div className="mb-3">
           <span className="block font-semibold text-[12px] tracking-[.02em] text-gray-500 uppercase mb-2.5">
-            Configuration de base — cochez ce qui s'applique
+            {t("adminProducts.specSection")}
           </span>
           <div className="flex flex-wrap gap-2 mb-4">
-            {SPEC_PRESETS.map((label) => {
-              const active = activeSpecLabels.has(label);
+            {specPresets.map(({ key, label }) => {
+              const active = activeSpecKeys.has(key);
               return (
                 <button
                   type="button"
-                  key={label}
-                  onClick={() => togglePresetSpec(label)}
+                  key={key}
+                  onClick={() => togglePresetSpec(key)}
                   className={`inline-flex items-center gap-1.5 text-[12.5px] px-3 py-[7px] rounded-full border transition-colors ${
                     active
                       ? "bg-red-600 border-red-600 text-white"
@@ -397,7 +386,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
             {form.specs.map((s, i) => (
               <div key={i} className="flex gap-2 items-center">
                 <input
-                  value={s.label}
+                  value={getPresetLabel("spec", s.label, language)}
                   onChange={(e) => updateSpec(i, "label", e.target.value)}
                   placeholder="Nom de la caractéristique"
                   className="flex-[1.1] px-3 py-2 rounded-[9px] bg-gray-50 border border-gray-200 text-gray-900 text-[13px] outline-none focus:border-red-500 transition-colors"
@@ -431,16 +420,16 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         {/* features presets — autres configurations */}
         <div className="mb-3">
           <span className="block font-semibold text-[12px] tracking-[.02em] text-gray-500 uppercase mb-2.5">
-            Autres configurations
+            {t("adminProducts.featureSection")}
           </span>
           <div className="flex flex-wrap gap-2 mb-4">
-            {FEATURE_PRESETS.map((feature) => {
-              const active = activeFeatureSet.has(feature);
+            {featurePresets.map(({ key, label }) => {
+              const active = activeFeatureSet.has(key);
               return (
                 <button
                   type="button"
-                  key={feature}
-                  onClick={() => toggleFeature(feature)}
+                  key={key}
+                  onClick={() => toggleFeature(key)}
                   className={`inline-flex items-center gap-1.5 text-[12.5px] px-3 py-[7px] rounded-full border transition-colors ${
                     active
                       ? "bg-red-600 border-red-600 text-white"
@@ -448,7 +437,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
                   }`}
                 >
                   {active && <Check size={12} />}
-                  {feature}
+                  {label}
                 </button>
               );
             })}
@@ -488,7 +477,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
         {/* images */}
         <div className="mb-7">
           <span className="block font-semibold text-[12px] tracking-[.02em] text-gray-500 uppercase mb-2.5">
-            Images
+            {t("adminProducts.imageSection")}
           </span>
           <div className="flex flex-wrap gap-2.5 mb-3">
             {existingImages.map((img) => (
@@ -520,7 +509,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
               <input type="file" accept="image/*" multiple hidden onChange={handleFileChange} />
             </label>
           </div>
-          <p className="text-[11px] text-gray-400 m-0">8 images maximum, 5 Mo par image.</p>
+          <p className="text-[11px] text-gray-400 m-0">{t("adminProducts.imageHint")}</p>
         </div>
 
         <div className="flex gap-3">
@@ -530,14 +519,14 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
             disabled={saving}
             className="flex-1 py-3 rounded-[12px] bg-white border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
-            Annuler
+            {t("adminProducts.cancel")}
           </button>
           <button
             type="submit"
             disabled={saving}
             className="flex-1 py-3 rounded-[12px] bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm transition-colors"
           >
-            {saving ? "Enregistrement…" : initial ? "Mettre à jour" : "Créer"}
+            {saving ? t("adminProducts.save") : initial ? t("adminProducts.update") : t("adminProducts.create")}
           </button>
         </div>
       </form>
@@ -547,7 +536,8 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
 }
 
 function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
-  const issues = getVisibilityIssues(product);
+  const { t } = useLanguage();
+  const issues = getVisibilityIssues(product, t);
 
   return (
     <div className="group relative bg-white rounded-[20px] border border-gray-100 overflow-hidden hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-300">
@@ -568,12 +558,12 @@ function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
         <div className="absolute top-2.5 left-2.5 flex gap-1.5">
           {product.showOnMainPage && (
             <span className="text-[10px] px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-semibold uppercase ring-1 ring-red-100">
-              Accueil
+              {t("adminProducts.statusHome")}
             </span>
           )}
           {!product.available && (
             <span className="text-[10px] px-2.5 py-1 rounded-full bg-gray-900/80 text-white font-semibold uppercase">
-              Indispo
+              {t("adminProducts.statusUnavailable")}
             </span>
           )}
         </div>
@@ -581,7 +571,7 @@ function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
         {issues.length > 0 && (
           <button
             onClick={() => onShowIssues(issues)}
-            title="Voir pourquoi ce produit a des points à corriger"
+            title={t("adminProducts.visibilityTitle")}
             className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/95 text-amber-500 hover:bg-amber-50 flex items-center justify-center shadow-sm transition-colors"
           >
             <AlertTriangle size={14} />
@@ -594,7 +584,7 @@ function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
             onClick={() => onEdit(product)}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[10px] bg-white/95 backdrop-blur text-gray-700 hover:text-gray-900 text-[12px] font-semibold shadow-sm transition-colors"
           >
-            <Edit size={13} /> Modifier
+            <Edit size={13} /> {t("adminProducts.editAction")}
           </button>
           <button
             onClick={() => onDelete(product)}
@@ -608,7 +598,7 @@ function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
       <div className="p-4">
         <p className="font-bold text-[14.5px] text-gray-900 m-0 truncate">{product.name}</p>
         <p className="text-[12.5px] text-gray-400 m-0 mt-1">
-          {product.price != null ? `${product.price.toLocaleString()} DA` : "Sur demande"}
+          {product.price != null ? `${product.price.toLocaleString()} DA` : t("products.priceOnDemand")}
         </p>
       </div>
     </div>
@@ -616,6 +606,7 @@ function ProductCard({ product, onEdit, onDelete, onShowIssues }) {
 }
 
 export default function AdminProducts() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -629,7 +620,7 @@ export default function AdminProducts() {
       const res = await axios.get(`${API_BASE_URL}/products`);
       setProducts(res.data || []);
     } catch {
-      toast.error("Impossible de charger les produits");
+      toast.error(t("adminProducts.loadError"));
     } finally {
       setLoading(false);
     }
@@ -696,20 +687,20 @@ export default function AdminProducts() {
         );
         const failedCount = results.filter((r) => r.status === "rejected").length;
         if (failedCount > 0) {
-          toast.error(`${failedCount} image(s) n'ont pas pu être supprimée(s), réessayez.`);
+          toast.error(t("adminProducts.imageRemoveError", { count: failedCount }));
         }
       }
 
-      toast.success(isEdit ? "Produit mis à jour" : "Produit créé");
+      toast.success(isEdit ? t("adminProducts.saveSuccessUpdate") : t("adminProducts.saveSuccessCreate"));
       setEditing(null);
       await fetchAll();
 
       // Surface a clear reason if the saved product still won't show
       // properly, instead of leaving the admin to guess.
-      const issues = getVisibilityIssues(saved);
+      const issues = getVisibilityIssues(saved, t);
       if (issues.length > 0) setIssuesPopup(issues);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Une erreur est survenue");
+      toast.error(err.response?.data?.message || t("adminProducts.saveError"));
     } finally {
       setSaving(false);
     }
@@ -721,10 +712,10 @@ export default function AdminProducts() {
       await axios.delete(`${API_BASE_URL}/products/${product._id}`, {
         headers: authHeaders(),
       });
-      toast.success("Produit supprimé");
+      toast.success(t("adminProducts.deleteSuccess"));
       setProducts((prev) => prev.filter((p) => p._id !== product._id));
     } catch {
-      toast.error("Suppression impossible");
+      toast.error(t("adminProducts.deleteError"));
     }
   };
 
@@ -732,12 +723,12 @@ export default function AdminProducts() {
     <div className="bg-gray-50 min-h-screen px-5 sm:px-[26px] py-10">
       <div className="max-w-[1200px] mx-auto">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <h1 className="font-bold text-2xl sm:text-3xl text-gray-900 m-0">Produits</h1>
+          <h1 className="font-bold text-2xl sm:text-3xl text-gray-900 m-0">{t("adminProducts.title")}</h1>
           <button
             onClick={() => setEditing({})}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors"
           >
-            <Plus size={16} /> Nouveau produit
+            <Plus size={16} /> {t("adminProducts.addProduct")}
           </button>
         </div>
 
@@ -746,15 +737,15 @@ export default function AdminProducts() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un produit…"
+            placeholder={t("adminProducts.searchPlaceholder")}
             className="w-full pl-10 pr-3.5 py-[10px] rounded-full bg-white border border-gray-200 text-gray-900 text-sm placeholder:text-gray-350 outline-none focus:border-red-500 transition-colors"
           />
         </div>
 
         {loading ? (
-          <p className="text-gray-400">Chargement…</p>
+          <p className="text-gray-400">{t("adminProducts.loading")}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-gray-400">Aucun produit trouvé.</p>
+          <p className="text-gray-400">{t("adminProducts.empty")}</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((p) => (

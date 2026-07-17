@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useLanguage } from "../i18n.jsx";
 
 export default function NotFound() {
+  const { t } = useLanguage();
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-5 sm:px-8 lg:px-12 text-center">
       <motion.div
@@ -20,7 +22,7 @@ export default function NotFound() {
         transition={{ delay: 0.2, duration: 0.8 }}
         className="font-['Space_Grotesk'] font-bold text-[clamp(28px,5vw,52px)] tracking-[-0.02em] text-zinc-900 m-0 mb-4"
       >
-        Page introuvable
+        {t("notFound.title")}
       </motion.h1>
 
       <motion.p
@@ -29,8 +31,7 @@ export default function NotFound() {
         transition={{ delay: 0.4, duration: 0.8 }}
         className="max-w-[520px] text-[15.5px] sm:text-lg leading-[1.65] text-zinc-500 mt-0 mb-10"
       >
-        La page que vous cherchez n'existe pas ou a été déplacée. Retournez à
-        l'accueil pour découvrir nos scooters.
+        {t("notFound.message")}
       </motion.p>
 
       <motion.div
@@ -42,7 +43,7 @@ export default function NotFound() {
           to="/"
           className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] bg-red-600 hover:bg-red-700 text-white font-['Space_Grotesk'] font-bold text-[15.5px] no-underline shadow-[0_20px_45px_-18px_rgba(220,38,38,0.55)] transition-colors duration-200"
         >
-          Retour à l'accueil
+          {t("notFound.backHome")}
         </Link>
       </motion.div>
     </div>

@@ -19,6 +19,77 @@ const parseJSONField = (value, fallback) => {
   }
 };
 
+const SPEC_PRESET_LOOKUP = {
+  nominal_power: ['Puissance nominale', 'القدرة الاسمية'],
+  nominal_voltage: ['Tension nominale', 'الجهد الاسمي'],
+  controller: ['Contrôleur', 'المتحكم'],
+  battery_type: ['Type de batterie', 'نوع البطارية'],
+  battery_specs: ['Spécifications de la batterie', 'مواصفات البطارية'],
+  max_speed: ['Vitesse maximale', 'السرعة القصوى'],
+  autonomy: ['Autonomie', 'المدى'],
+  motor_type: ['Type de moteur', 'نوع المحرك'],
+  slope_angle: ['Angle de pente', 'زاوية المنحدر'],
+  charging_time: ['Temps de charge', 'وقت الشحن'],
+  brakes: ['Freins avant / arrière', 'الفرامل الأمامية / الخلفية'],
+  tire_specs: ['Spécifications des pneus', 'مواصفات الإطارات'],
+  hub_specs: ['Spécifications du moyeu', 'مواصفات المحور'],
+  max_load: ['Charge maximale', 'الحمولة القصوى'],
+  wheelbase: ['Empattement', 'المسافة بين المحورين'],
+  body_tank: ['Réservoir de carrosserie', 'خزان الجسم'],
+  seat_height: ['Hauteur du siège', 'ارتفاع المقعد'],
+  front_tires: ['Pneus avant', 'الإطارات الأمامية'],
+  rear_tires: ['Pneus arrière', 'الإطارات الخلفية'],
+  front_wheel: ['Jante avant', 'العجلة الأمامية'],
+  front_suspension: ['Suspension avant', 'التعليق الأمامي'],
+  rear_shock: ['Amortisseur arrière', 'المُخمد الخلفي'],
+  lights: ['Phares', 'الأضواء'],
+  instruments: ['Instruments', 'الأدوات'],
+};
+
+const FEATURE_PRESET_LOOKUP = {
+  repair_in_one_click: ['Réparation en un clic', 'إصلاح بنقرة واحدة'],
+  parking_brake_p: ['Frein de stationnement en position P', 'الفرامل اليدوية في وضع P'],
+  three_speeds: ['Trois vitesses', 'ثلاث سرعات'],
+  reverse: ['Marche arrière', 'الرجوع للخلف'],
+  usb_port: ['Port USB', 'منفذ USB'],
+  smart_start: ['Démarrage intelligent sans clé', 'التشغيل الذكي بدون مفتاح'],
+  cruise_control: ['Régulateur de vitesse', 'منظم السرعة'],
+};
+
+const normalizePresetValue = (type, value) => {
+  const lookup = type === 'feature' ? FEATURE_PRESET_LOOKUP : SPEC_PRESET_LOOKUP;
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!text) return value;
+  if (lookup[text]) return text;
+  const normalized = text.toLowerCase();
+  for (const [key, labels] of Object.entries(lookup)) {
+    if (labels.some((label) => label.toLowerCase() === normalized)) return key;
+  }
+  return value;
+};
+
+const normalizeSpecs = (specs = []) => {
+  if (!Array.isArray(specs)) return [];
+  return specs.map((spec) => ({
+    label: normalizePresetValue('spec', spec?.label),
+    value: typeof spec?.value === 'string' ? spec.value : String(spec?.value ?? ''),
+  }));
+};
+
+const normalizeFeatures = (features = []) => {
+  if (!Array.isArray(features)) return [];
+  return features.map((feature) => normalizePresetValue('feature', feature));
+};
+
+const normalizeProductPayload = (product) => {
+  if (!product) return product;
+  return {
+    ...product,
+    specs: normalizeSpecs(product.specs),
+    features: normalizeFeatures(product.features),
+  };
+};
+
 const generateUniqueSlug = async (name, excludeId = null) => {
   const base = slugify(name);
   let slug = base;
@@ -39,7 +110,7 @@ export const getProducts = asyncHandler(async (req, res) => {
   if (available !== undefined) query.available = available === 'true';
 
   const products = await Product.find(query).sort({ createdAt: -1 }).lean();
-  res.json(products);
+  res.json(products.map(normalizeProductPayload));
 });
 
 export const getProductById = asyncHandler(async (req, res) => {
@@ -48,7 +119,7 @@ export const getProductById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Product not found');
   }
-  res.json(product);
+  res.json(normalizeProductPayload(product));
 });
 
 export const createProduct = asyncHandler(async (req, res) => {
@@ -88,8 +159,8 @@ export const createProduct = asyncHandler(async (req, res) => {
       }
     }
 
-    const specs = parseJSONField(req.body.specs, []);
-    const features = parseJSONField(req.body.features, []);
+    const specs = normalizeSpecs(parseJSONField(req.body.specs, []));
+    const features = normalizeFeatures(parseJSONField(req.body.features, []));
     const dimensions = parseJSONField(req.body.dimensions, {
       length: null,
       width: null,
@@ -119,7 +190,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 
     console.log("Created Product:", product);
 
-    res.status(201).json(product);
+    res.status(201).json(normalizeProductPayload(product));
   } catch (err) {
     console.error("CREATE PRODUCT ERROR:");
     console.error(err);
@@ -151,9 +222,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (showOnMainPage !== undefined)
     product.showOnMainPage = showOnMainPage === 'true' || showOnMainPage === true;
 
-  if (req.body.specs !== undefined) product.specs = parseJSONField(req.body.specs, product.specs);
+  if (req.body.specs !== undefined) product.specs = normalizeSpecs(parseJSONField(req.body.specs, product.specs));
   if (req.body.features !== undefined)
-    product.features = parseJSONField(req.body.features, product.features);
+    product.features = normalizeFeatures(parseJSONField(req.body.features, product.features));
   if (req.body.dimensions !== undefined)
     product.dimensions = parseJSONField(req.body.dimensions, product.dimensions);
 

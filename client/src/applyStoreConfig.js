@@ -1,4 +1,4 @@
-import { store } from "./store.config.js";
+import { getLocalizedStoreValue, store } from "./store.config.js";
 
 function hexToRgbChannels(hex) {
   let h = String(hex).trim().replace("#", "");
@@ -22,8 +22,9 @@ export function applyStoreConfig() {
   root.style.setProperty("--accent-rgb", hexToRgbChannels(store.theme.accent));
 
   // SEO / head
-  if (store.seo?.title) document.title = store.seo.title;
-  if (store.locale?.lang) root.setAttribute("lang", store.locale.lang);
+  const currentLanguage = document.documentElement.lang || localStorage.getItem("preferred-language") || store.locale?.lang || "fr";
+  if (store.seo?.title) document.title = getLocalizedStoreValue(store.seo.title, currentLanguage);
+  if (store.locale?.lang) root.setAttribute("lang", currentLanguage);
 
   if (store.brand?.favicon) {
     let link = document.querySelector("link[rel='icon']");
@@ -42,7 +43,7 @@ export function applyStoreConfig() {
       meta.name = "description";
       document.head.appendChild(meta);
     }
-    meta.content = store.seo.description;
+    meta.content = getLocalizedStoreValue(store.seo.description, currentLanguage);
   }
 }
 
