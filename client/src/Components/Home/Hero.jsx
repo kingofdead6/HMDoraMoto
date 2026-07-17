@@ -9,9 +9,9 @@ export default function Hero() {
   return (
     <section className="relative w-full min-h-screen  bg-white">
       {/* Simple decorative background — soft color blobs + dot grid, no image/video */}
-      <div className="absolute inset-0 z-1000 pointer-events-none">
+      <div className="absolute inset-0 z-1000 pointer-events-none overflow-x-hidden">
         <div
-          className="absolute inset-0 opacity-[0.5] [background-image:radial-gradient(#00000014_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_65%_55%_at_50%_0%,black,transparent)]"
+          className="absolute inset-0 opacity-[0.5]  [background-image:radial-gradient(#00000014_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_65%_55%_at_50%_0%,black,transparent)]"
         />
         <div className="absolute -top-32 -left-24 w-[460px] h-[460px] rounded-full bg-red-500/10 blur-[110px]" />
         <div className="absolute top-1/4 -right-32 w-[480px] h-[480px] rounded-full bg-orange-400/10 blur-[120px]" />
