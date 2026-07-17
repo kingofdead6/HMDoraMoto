@@ -12,7 +12,7 @@ import {
   normalizePresetValue,
 } from "../../i18n.jsx";
 
-const MAX_IMAGES = 8;
+const MAX_IMAGES = 16;
 const MAX_IMAGE_MB = 5;
 
 const authHeaders = () => {
