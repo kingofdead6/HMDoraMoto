@@ -7,7 +7,7 @@ import ServicesSection from "../Components/Home/Services";
 import ProductsPage from "./ProductsPage";
 export default function HomePage() {
   return (
-    <main >
+    <main className="overflow-x-hidden">
       <Hero />
       <ProductsPage />
     </main>

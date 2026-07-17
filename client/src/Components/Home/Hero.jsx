@@ -7,9 +7,9 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative w-full min-h-screen  bg-white">
+    <section className="relative w-full min-h-screen  bg-white ">
       {/* Simple decorative background — soft color blobs + dot grid, no image/video */}
-      <div className="absolute inset-0 z-1000 pointer-events-none overflow-x-hidden">
+      <div className="absolute inset-0 z-1000 pointer-events-none ">
         <div
           className="absolute inset-0 opacity-[0.5]  [background-image:radial-gradient(#00000014_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_65%_55%_at_50%_0%,black,transparent)]"
         />
