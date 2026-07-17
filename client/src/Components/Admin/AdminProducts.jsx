@@ -515,7 +515,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
                 </button>
               </div>
             ))}
-            <label className="w-20 h-20 rounded-[10px] border-2 border-dashed border-gray-250 flex items-center justify-center cursor-pointer text-gray-350 hover:text-gray-600 hover:border-gray-400 transition-colors">
+            <label className="w-20 h-20 rounded-[10px]  text-black border-2 border-dashed border-gray-250 flex items-center justify-center cursor-pointer text-gray-350 hover:text-gray-600 hover:border-gray-400 transition-colors">
               <Plus size={18} />
               <input type="file" accept="image/*" multiple hidden onChange={handleFileChange} />
             </label>
