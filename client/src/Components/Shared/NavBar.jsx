@@ -76,10 +76,10 @@ export default function Navbar() {
           scrolled ? "border-zinc-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]" : "border-zinc-100"
         }`}
       >
-        <div className={`max-w-[1280px] mx-auto px-5 sm:px-[26px] py-3 flex items-center justify-between gap-6 ${isRTL ? "flex-row-reverse" : ""}`}>
-          <Link to="/" className={`flex items-center gap-[10px] no-underline shrink-0 ${isRTL ? "flex-row-reverse" : ""}`}>
-            <img src={logo} alt={store.brand.name} className="h-9 w-9 object-contain rounded-full" />
-            <span className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl tracking-[-0.02em] text-zinc-900">
+        <div className={`max-w-[1280px] mx-auto px-4 sm:px-[26px] py-3 flex flex-wrap items-center justify-between gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
+          <Link to="/" className={`flex items-center gap-[10px] no-underline min-w-0 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <img src={logo} alt={store.brand.name} className="h-9 w-9 object-contain rounded-full shrink-0" />
+            <span className="font-['Space_Grotesk'] font-bold text-base sm:text-xl tracking-[-0.02em] text-zinc-900 truncate">
               {store.brand.name}
             </span>
           </Link>
@@ -103,7 +103,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          <div className={`flex items-center gap-2.5 ${isRTL ? "flex-row-reverse" : ""}`}>
+          <div className={`flex items-center gap-2.5 ml-auto shrink-0 ${isRTL ? "flex-row-reverse" : ""}`}>
             {!isAdmin && (
               <a
                 href={`https://wa.me/${store.contact.whatsapp}`}
@@ -126,7 +126,7 @@ export default function Navbar() {
             {isAdmin && (
               <button
                 onClick={handleLogout}
-                className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-[9px] rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms]"
+                className="hidden md:inline-flex font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-[9px] rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms]"
               >
                 {t("nav.logout")}
               </button>
@@ -147,14 +147,15 @@ export default function Navbar() {
 
       {menuOpen && (
         <nav className="md:hidden bg-white border-b border-zinc-200 py-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]">
-          <div className="max-w-[1280px] mx-auto px-5 sm:px-[26px] flex flex-col gap-2">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-[26px] flex flex-col gap-2">
             {navItems.map((n) => {
               const active = isActive(n);
               return (
                 <Link
                   key={n.to}
                   to={n.to}
-                  className={`font-['Manrope'] font-semibold text-[14.5px] px-4 py-2 rounded-[11px] block no-underline transition-all duration-[250ms] ${
+                  onClick={() => setMenuOpen(false)}
+                  className={`font-['Manrope'] font-semibold text-[14.5px] px-4 py-2.5 rounded-[11px] block no-underline transition-all duration-[250ms] ${
                     active
                       ? "text-red-600 bg-red-50"
                       : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
@@ -164,20 +165,33 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            <button
+              type="button"
+              onClick={() => {
+                setLanguage(language === "fr" ? "ar" : "fr");
+                setMenuOpen(false);
+              }}
+              className="font-['Manrope'] font-semibold text-sm text-zinc-600 bg-zinc-50 border border-zinc-200 px-4 py-2.5 rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms] text-left"
+            >
+              {language === "fr" ? t("nav.arabic") : t("nav.french")}
+            </button>
             {!isAdmin && (
               <a
                 href={`https://wa.me/${store.contact.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-['Manrope'] font-semibold text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-[12px] transition-colors duration-200 no-underline text-center"
+                className="font-['Manrope'] font-semibold text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-2.5 rounded-[12px] transition-colors duration-200 no-underline text-center"
               >
                 {t("nav.whatsapp")}
               </a>
             )}
             {isAdmin && (
               <button
-                onClick={handleLogout}
-                className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-2 rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms] text-left"
+                onClick={() => {
+                  handleLogout();
+                  setMenuOpen(false);
+                }}
+                className="font-['Manrope'] font-semibold text-sm text-zinc-500 bg-transparent border border-zinc-200 px-4 py-2.5 rounded-[11px] cursor-pointer hover:text-zinc-900 hover:border-zinc-300 transition-all duration-[250ms] text-left"
               >
                 {t("nav.logout")}
               </button>
