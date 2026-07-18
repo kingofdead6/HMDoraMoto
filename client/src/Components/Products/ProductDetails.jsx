@@ -187,6 +187,76 @@ function iconForLabel(label = "") {
   return SpecIcons.spark;
 }
 
+/* per-box color system — full literal classes so Tailwind JIT keeps them.
+   value text stays dark for legibility; the tile, ring, glow carry the hue. */
+const BOX_COLORS = [
+  {
+    tile: "bg-rose-100 text-rose-600 ring-rose-200/70",
+    ring: "ring-rose-100",
+    idx: "text-rose-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(244,63,94,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(244,63,94,0.6)]",
+    hoverTile: "group-hover:bg-rose-600",
+  },
+  {
+    tile: "bg-amber-100 text-amber-600 ring-amber-200/70",
+    ring: "ring-amber-100",
+    idx: "text-amber-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(245,158,11,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(245,158,11,0.6)]",
+    hoverTile: "group-hover:bg-amber-500",
+  },
+  {
+    tile: "bg-emerald-100 text-emerald-600 ring-emerald-200/70",
+    ring: "ring-emerald-100",
+    idx: "text-emerald-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(16,185,129,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(16,185,129,0.6)]",
+    hoverTile: "group-hover:bg-emerald-600",
+  },
+  {
+    tile: "bg-sky-100 text-sky-600 ring-sky-200/70",
+    ring: "ring-sky-100",
+    idx: "text-sky-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(14,165,233,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(14,165,233,0.6)]",
+    hoverTile: "group-hover:bg-sky-600",
+  },
+  {
+    tile: "bg-violet-100 text-violet-600 ring-violet-200/70",
+    ring: "ring-violet-100",
+    idx: "text-violet-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(139,92,246,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(139,92,246,0.6)]",
+    hoverTile: "group-hover:bg-violet-600",
+  },
+  {
+    tile: "bg-fuchsia-100 text-fuchsia-600 ring-fuchsia-200/70",
+    ring: "ring-fuchsia-100",
+    idx: "text-fuchsia-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(217,70,239,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(217,70,239,0.6)]",
+    hoverTile: "group-hover:bg-fuchsia-600",
+  },
+  {
+    tile: "bg-cyan-100 text-cyan-600 ring-cyan-200/70",
+    ring: "ring-cyan-100",
+    idx: "text-cyan-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(6,182,212,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(6,182,212,0.6)]",
+    hoverTile: "group-hover:bg-cyan-600",
+  },
+  {
+    tile: "bg-indigo-100 text-indigo-600 ring-indigo-200/70",
+    ring: "ring-indigo-100",
+    idx: "text-indigo-400",
+    shadow: "shadow-[0_16px_38px_-18px_rgba(99,102,241,0.5)]",
+    hover: "hover:shadow-[0_28px_56px_-16px_rgba(99,102,241,0.6)]",
+    hoverTile: "group-hover:bg-indigo-600",
+  },
+];
+
+
 /* ---------- scroll-staggered reveal -------------------------------- */
 
 function Reveal({ children, delay = 0, className = "", as: Tag = "div" }) {
@@ -702,22 +772,27 @@ export default function ProductDetails() {
                 count={(product.specs?.length || 0) + (hasDimensions ? 1 : 0)}
               />
             </Reveal>
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[28px] bg-zinc-200/70 ring-1 ring-zinc-200/70 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
               {product.specs?.map((s, i) => {
                 const Icon = iconForLabel(s.label);
+                const c = BOX_COLORS[i % BOX_COLORS.length];
                 return (
                   <Reveal key={i} delay={Math.min(i * 40, 320)}>
-                    <div className="group relative h-full bg-white p-6 transition-colors duration-300 hover:bg-zinc-50 sm:p-7">
-                      <span className="absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] text-zinc-300">
+                    <div
+                      className={`group relative h-full rounded-[24px] bg-white p-6 ring-1 ${c.ring} ${c.shadow} ${c.hover} transition-all duration-300 hover:-translate-y-1.5 sm:p-7`}
+                    >
+                      <span className={`absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] ${c.idx}`}>
                         {pad(i + 1)}
                       </span>
-                      <span className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200/80 transition-all duration-300 group-hover:bg-red-600 group-hover:text-white group-hover:ring-red-600 group-hover:-translate-y-0.5">
-                        <Icon c="h-[22px] w-[22px]" />
+                      <span
+                        className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${c.tile} ${c.hoverTile} transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-white group-hover:ring-transparent`}
+                      >
+                        <Icon c="h-[23px] w-[23px]" />
                       </span>
                       <p className="m-0 font-['Space_Grotesk'] text-[clamp(20px,2.3vw,26px)] font-bold leading-none tracking-[-0.02em] text-zinc-900">
                         {s.value}
                       </p>
-                      <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-400">
+                      <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-500">
                         {getPresetLabel("spec", s.label, language)}
                       </p>
                     </div>
@@ -725,25 +800,33 @@ export default function ProductDetails() {
                 );
               })}
 
-              {hasDimensions && (
-                <Reveal delay={Math.min((product.specs?.length || 0) * 40, 320)}>
-                  <div className="group relative h-full bg-white p-6 transition-colors duration-300 hover:bg-zinc-50 sm:p-7">
-                    <span className="absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] text-zinc-300">
-                      {pad((product.specs?.length || 0) + 1)}
-                    </span>
-                    <span className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200/80 transition-all duration-300 group-hover:bg-red-600 group-hover:text-white group-hover:ring-red-600 group-hover:-translate-y-0.5">
-                      <DimensionIcon className="h-[22px] w-[22px]" />
-                    </span>
-                    <p className="m-0 font-['Space_Grotesk'] text-[clamp(15px,1.8vw,18px)] font-bold leading-tight tracking-[-0.01em] text-zinc-900">
-                      {length} × {width} × {height}
-                      <span className="ml-1 font-['JetBrains_Mono'] text-[11px] font-medium text-zinc-400">mm</span>
-                    </p>
-                    <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-400">
-                      {t("productDetails.characteristics")}
-                    </p>
-                  </div>
-                </Reveal>
-              )}
+              {hasDimensions && (() => {
+                const di = product.specs?.length || 0;
+                const c = BOX_COLORS[di % BOX_COLORS.length];
+                return (
+                  <Reveal delay={Math.min(di * 40, 320)}>
+                    <div
+                      className={`group relative h-full rounded-[24px] bg-white p-6 ring-1 ${c.ring} ${c.shadow} ${c.hover} transition-all duration-300 hover:-translate-y-1.5 sm:p-7`}
+                    >
+                      <span className={`absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] ${c.idx}`}>
+                        {pad(di + 1)}
+                      </span>
+                      <span
+                        className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${c.tile} ${c.hoverTile} transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-white group-hover:ring-transparent`}
+                      >
+                        <DimensionIcon className="h-[23px] w-[23px]" />
+                      </span>
+                      <p className="m-0 font-['Space_Grotesk'] text-[clamp(15px,1.8vw,18px)] font-bold leading-tight tracking-[-0.01em] text-zinc-900">
+                        {length} × {width} × {height}
+                        <span className="ml-1 font-['JetBrains_Mono'] text-[11px] font-medium text-zinc-400">mm</span>
+                      </p>
+                      <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-500">
+                        {t("productDetails.characteristics")}
+                      </p>
+                    </div>
+                  </Reveal>
+                );
+              })()}
             </div>
           </section>
         )}
@@ -759,16 +842,19 @@ export default function ProductDetails() {
               />
             </Reveal>
             <div className="flex flex-wrap gap-2.5 sm:gap-3">
-              {product.features.map((f, i) => (
-                <Reveal key={i} as="span" delay={Math.min(i * 40, 320)} className="inline-flex">
-                  <span className="group inline-flex cursor-default items-center gap-2.5 rounded-full bg-white px-[18px] py-2.5 ring-1 ring-zinc-200 text-[13.5px] text-zinc-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-900 hover:text-white hover:ring-zinc-900 hover:shadow-[0_14px_30px_-14px_rgba(24,24,27,0.5)]">
-                    <span className="font-['JetBrains_Mono'] text-[13px] leading-none text-red-500 transition-transform duration-300 group-hover:rotate-90 group-hover:text-red-400">
-                      +
+              {product.features.map((f, i) => {
+                const c = BOX_COLORS[i % BOX_COLORS.length];
+                return (
+                  <Reveal key={i} as="span" delay={Math.min(i * 40, 320)} className="inline-flex">
+                    <span className={`group inline-flex cursor-default items-center gap-2.5 rounded-full bg-white px-[18px] py-2.5 ring-1 ${c.ring} ${c.shadow} text-[13.5px] text-zinc-700 transition-all duration-300 hover:-translate-y-1 ${c.hover}`}>
+                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ring-1 ${c.tile} ${c.hoverTile} transition-colors duration-300 group-hover:text-white group-hover:ring-transparent`}>
+                        <span className="font-['JetBrains_Mono'] text-[13px] leading-none transition-transform duration-300 group-hover:rotate-90">+</span>
+                      </span>
+                      {getPresetLabel("feature", f, language)}
                     </span>
-                    {getPresetLabel("feature", f, language)}
-                  </span>
-                </Reveal>
-              ))}
+                  </Reveal>
+                );
+              })}
             </div>
           </section>
         )}
