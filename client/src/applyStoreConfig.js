@@ -26,15 +26,6 @@ export function applyStoreConfig() {
   if (store.seo?.title) document.title = getLocalizedStoreValue(store.seo.title, currentLanguage);
   if (store.locale?.lang) root.setAttribute("lang", currentLanguage);
 
-  if (store.brand?.favicon) {
-    let link = document.querySelector("link[rel='icon']");
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      document.head.appendChild(link);
-    }
-    link.href = store.brand.favicon;
-  }
 
   if (store.seo?.description) {
     let meta = document.querySelector("meta[name='description']");
