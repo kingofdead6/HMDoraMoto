@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../api";
@@ -8,11 +9,7 @@ import { useLanguage, getPresetLabel } from "../../i18n.jsx";
 
 /* ------------------------------------------------------------------ */
 /*  design tokens & helpers                                            */
-/*                                                                     */
 /*  Visual language: "spec sheet meets showroom".                      */
-/*  Monochrome zinc + one signal red. JetBrains Mono carries all       */
-/*  technical readouts (counters, indices, labels); Space Grotesk      */
-/*  does the display work at real display sizes.                       */
 /* ------------------------------------------------------------------ */
 
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")`;
@@ -29,7 +26,7 @@ function buildWhatsappLink(product, language) {
   return `https://wa.me/${store.contact.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
-/* ---------- scoped keyframes / effects (no global CSS needed) ------ */
+/* ---------- scoped keyframes / effects ----------------------------- */
 
 const css = `
 .pd-reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
@@ -43,16 +40,18 @@ const css = `
 .pd-outline-light{color:transparent;-webkit-text-stroke:1.5px rgba(24,24,27,.07)}
 .pd-blink{animation:pdBlink 1.8s ease-in-out infinite}
 @keyframes pdBlink{0%,100%{opacity:1}50%{opacity:.25}}
+.pd-lightbox{animation:pdFade .2s ease both}
+@keyframes pdFade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){
   .pd-reveal{transition:none;opacity:1;transform:none}
   .pd-cta::after{display:none}
-  .pd-skel,.pd-blink{animation:none}
+  .pd-skel,.pd-blink,.pd-lightbox{animation:none}
 }
 `;
 
 const PDStyles = () => <style>{css}</style>;
 
-/* ---------- inline icons (no icon lib in this project) ------------- */
+/* ---------- inline icons ------------------------------------------- */
 
 const ArrowIcon = ({ className = "" }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
@@ -66,13 +65,19 @@ const ChatIcon = ({ className = "" }) => (
   </svg>
 );
 
-const DimensionIcon = ({ className = "" }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+const DimensionIcon = ({ className = "", c = "" }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className || c} aria-hidden="true">
     <path d="M4 15v5h5M20 9V4h-5M4.5 19.5l15-15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-/* ---------- spec icon set (thin line, showroom-datasheet feel) ----- */
+const CloseIcon = ({ className = "" }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/* ---------- spec icon set ------------------------------------------ */
 
 const iconBase = {
   viewBox: "0 0 24 24",
@@ -187,8 +192,7 @@ function iconForLabel(label = "") {
   return SpecIcons.spark;
 }
 
-/* per-box color system — full literal classes so Tailwind JIT keeps them.
-   value text stays dark for legibility; the tile, ring, glow carry the hue. */
+/* per-box color system — full literal classes so Tailwind JIT keeps them. */
 const BOX_COLORS = [
   {
     tile: "bg-rose-100 text-rose-600 ring-rose-200/70",
@@ -222,40 +226,7 @@ const BOX_COLORS = [
     hover: "hover:shadow-[0_28px_56px_-16px_rgba(14,165,233,0.6)]",
     hoverTile: "group-hover:bg-sky-600",
   },
-  {
-    tile: "bg-violet-100 text-violet-600 ring-violet-200/70",
-    ring: "ring-violet-100",
-    idx: "text-violet-400",
-    shadow: "shadow-[0_16px_38px_-18px_rgba(139,92,246,0.5)]",
-    hover: "hover:shadow-[0_28px_56px_-16px_rgba(139,92,246,0.6)]",
-    hoverTile: "group-hover:bg-violet-600",
-  },
-  {
-    tile: "bg-fuchsia-100 text-fuchsia-600 ring-fuchsia-200/70",
-    ring: "ring-fuchsia-100",
-    idx: "text-fuchsia-400",
-    shadow: "shadow-[0_16px_38px_-18px_rgba(217,70,239,0.5)]",
-    hover: "hover:shadow-[0_28px_56px_-16px_rgba(217,70,239,0.6)]",
-    hoverTile: "group-hover:bg-fuchsia-600",
-  },
-  {
-    tile: "bg-cyan-100 text-cyan-600 ring-cyan-200/70",
-    ring: "ring-cyan-100",
-    idx: "text-cyan-400",
-    shadow: "shadow-[0_16px_38px_-18px_rgba(6,182,212,0.5)]",
-    hover: "hover:shadow-[0_28px_56px_-16px_rgba(6,182,212,0.6)]",
-    hoverTile: "group-hover:bg-cyan-600",
-  },
-  {
-    tile: "bg-indigo-100 text-indigo-600 ring-indigo-200/70",
-    ring: "ring-indigo-100",
-    idx: "text-indigo-400",
-    shadow: "shadow-[0_16px_38px_-18px_rgba(99,102,241,0.5)]",
-    hover: "hover:shadow-[0_28px_56px_-16px_rgba(99,102,241,0.6)]",
-    hoverTile: "group-hover:bg-indigo-600",
-  },
 ];
-
 
 /* ---------- scroll-staggered reveal -------------------------------- */
 
@@ -384,7 +355,47 @@ function SectionHeading({ index, title, count }) {
   );
 }
 
-/* ---------- gallery: layered frame + viewfinder language ----------- */
+/* ---------- spotlight card (the "important" specs) ----------------- */
+
+function SpecCard({ index, icon: Icon, value, label, color }) {
+  return (
+    <div
+      className={`group relative h-full rounded-[24px] bg-white p-6 ring-1 ${color.ring} ${color.shadow} ${color.hover} transition-all duration-300 hover:-translate-y-1.5 sm:p-7`}
+    >
+      <span className={`absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] ${color.idx}`}>
+        {pad(index)}
+      </span>
+      <span
+        className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${color.tile} ${color.hoverTile} transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-white group-hover:ring-transparent`}
+      >
+        {Icon ? <Icon c="h-[23px] w-[23px]" /> : null}
+      </span>
+      <p className="m-0 font-['Space_Grotesk'] text-[clamp(19px,2.2vw,25px)] font-bold leading-none tracking-[-0.02em] text-zinc-900">
+        {value}
+      </p>
+      <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-500">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/* ---------- point row (the "rest") --------------------------------- */
+
+function SpecPoint({ icon: Icon, label, value }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-zinc-100 py-3.5">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-zinc-400 ring-1 ring-zinc-200">
+        {Icon ? <Icon c="h-[16px] w-[16px]" /> : null}
+      </span>
+      <span className="text-[13.5px] text-zinc-500">{label}</span>
+      <span aria-hidden="true" className="mx-1 flex-1 self-center border-b border-dotted border-zinc-200" />
+      <span className="text-right font-['Space_Grotesk'] text-[14px] font-bold text-zinc-900">{value}</span>
+    </div>
+  );
+}
+
+/* ---------- gallery ------------------------------------------------ */
 
 function Gallery({ images, name, active, setActive, onOpenImage }) {
   const safeImages = images?.length ? images : [{ url: null }];
@@ -396,7 +407,6 @@ function Gallery({ images, name, active, setActive, onOpenImage }) {
 
   return (
     <div className="relative">
-      {/* offset ghost frame + ambient glow — layered showroom depth */}
       <div aria-hidden="true" className="absolute inset-0 translate-x-3 translate-y-4 rotate-[1.3deg] rounded-[36px] border border-zinc-200/80 pointer-events-none" />
       <div aria-hidden="true" className="absolute top-0 left-0 w-56 h-56 rounded-full bg-red-500/10 blur-[90px] pointer-events-none" />
       <div aria-hidden="true" className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-amber-400/10 blur-[100px] pointer-events-none" />
@@ -420,24 +430,20 @@ function Gallery({ images, name, active, setActive, onOpenImage }) {
           )}
         </button>
 
-        {/* viewfinder corner ticks */}
         <span aria-hidden="true" className="pointer-events-none absolute top-4 left-4 w-5 h-5 border-t-2 border-l-2 border-white/80 rounded-tl-lg mix-blend-difference" />
         <span aria-hidden="true" className="pointer-events-none absolute top-4 right-4 w-5 h-5 border-t-2 border-r-2 border-white/80 rounded-tr-lg mix-blend-difference" />
         <span aria-hidden="true" className="pointer-events-none absolute bottom-4 left-4 w-5 h-5 border-b-2 border-l-2 border-white/80 rounded-bl-lg mix-blend-difference" />
         <span aria-hidden="true" className="pointer-events-none absolute bottom-4 right-4 w-5 h-5 border-b-2 border-r-2 border-white/80 rounded-br-lg mix-blend-difference" />
 
-        {/* frame counter readout */}
         <span className="pointer-events-none absolute bottom-5 left-5 inline-flex items-baseline gap-1 rounded-full bg-black/45 backdrop-blur-md px-3.5 py-1.5 font-['JetBrains_Mono'] text-[11px] tracking-[0.2em] text-white">
           {pad(active + 1)}
           <span className="text-white/50">/ {pad(safeImages.length)}</span>
         </span>
 
-        {/* zoom hint */}
         <span className="pointer-events-none absolute bottom-5 right-5 inline-flex items-center rounded-full bg-black/45 backdrop-blur-md px-3.5 py-1.5 font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.25em] text-white/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           Zoom
         </span>
 
-        {/* hover arrows */}
         {many && (
           <>
             <button
@@ -460,7 +466,6 @@ function Gallery({ images, name, active, setActive, onOpenImage }) {
         )}
       </div>
 
-      {/* filmstrip */}
       {many && (
         <div className="flex gap-3 mt-5 overflow-x-auto pb-2">
           {safeImages.map((img, i) => (
@@ -487,6 +492,120 @@ function Gallery({ images, name, active, setActive, onOpenImage }) {
   );
 }
 
+/* ---------- lightbox (portaled to <body> so it clears the navbar) -- */
+
+function Lightbox({ product, index, setIndex, zoom, setZoom, onClose }) {
+  const images = product.images || [];
+  const count = images.length;
+
+  const node = (
+    <div
+      className="pd-lightbox fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-xl"
+      onClick={onClose}
+    >
+      {/* header: counter + model name */}
+      <div className="absolute top-5 left-5 z-10 flex flex-col gap-1">
+        {count > 0 && (
+          <span className="font-['JetBrains_Mono'] text-[12px] tracking-[0.25em] text-white/80">
+            {pad(index + 1)} <span className="text-white/40">/ {pad(count)}</span>
+          </span>
+        )}
+        <span className="font-['JetBrains_Mono'] text-[11px] uppercase tracking-[0.2em] text-white/50">
+          {product.name}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close image"
+        className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all duration-300 hover:rotate-90 hover:bg-white/15"
+      >
+        <CloseIcon className="h-5 w-5" />
+      </button>
+
+      {count > 1 && (
+        <button
+          type="button"
+          aria-label="Previous image"
+          onClick={(event) => {
+            event.stopPropagation();
+            setIndex((current) => (current === 0 ? count - 1 : current - 1));
+            setZoom(1);
+          }}
+          className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all duration-300 hover:scale-105 hover:bg-white/15"
+        >
+          <ArrowIcon className="h-5 w-5 rotate-180" />
+        </button>
+      )}
+
+      <div
+        className="relative flex h-full w-full max-w-6xl items-center justify-center p-4 sm:p-10"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {images[index]?.url ? (
+          <img
+            src={images[index].url}
+            alt={product.name}
+            onClick={() => setZoom((z) => (z === 1 ? 1.75 : 1))}
+            style={{ transform: `scale(${zoom})` }}
+            className={`max-h-full max-w-full rounded-2xl object-contain shadow-2xl transition-transform duration-500 ease-out ${
+              zoom > 1 ? "cursor-zoom-out" : "cursor-zoom-in"
+            }`}
+          />
+        ) : (
+          <div className="text-8xl text-white/80">🏍</div>
+        )}
+      </div>
+
+      {count > 1 && (
+        <button
+          type="button"
+          aria-label="Next image"
+          onClick={(event) => {
+            event.stopPropagation();
+            setIndex((current) => (current + 1) % count);
+            setZoom(1);
+          }}
+          className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all duration-300 hover:scale-105 hover:bg-white/15"
+        >
+          <ArrowIcon className="h-5 w-5" />
+        </button>
+      )}
+
+      {count > 1 && (
+        <div
+          className="absolute bottom-5 left-1/2 z-10 flex max-w-[92vw] -translate-x-1/2 gap-2.5 overflow-x-auto px-2 py-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {images.map((img, i) => (
+            <button
+              key={img._id ?? `lb-${i}`}
+              type="button"
+              onClick={() => {
+                setIndex(i);
+                setZoom(1);
+              }}
+              className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
+                index === i ? "ring-2 ring-red-500" : "opacity-50 ring-1 ring-white/20 hover:opacity-100"
+              }`}
+            >
+              {img.url ? (
+                <img src={img.url} alt={`${product.name} — ${i + 1}`} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-zinc-800" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (typeof document === "undefined") return node;
+  return createPortal(node, document.body);
+}
+
 /* ================================================================== */
 /*  page                                                               */
 /* ================================================================== */
@@ -501,8 +620,6 @@ export default function ProductDetails() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
-
-  /* ---------- data ------------------------------------------------- */
 
   useEffect(() => {
     const controller = new AbortController();
@@ -540,8 +657,6 @@ export default function ProductDetails() {
     };
   }, [id]);
 
-  /* ---------- lightbox keyboard + scroll lock ---------------------- */
-
   useEffect(() => {
     if (!lightboxOpen) return;
     const count = product?.images?.length || 0;
@@ -567,7 +682,6 @@ export default function ProductDetails() {
     };
   }, [lightboxOpen, product]);
 
-  /* keep the gallery in sync while browsing inside the lightbox */
   useEffect(() => {
     if (lightboxOpen) setActive(lightboxIndex);
   }, [lightboxIndex, lightboxOpen]);
@@ -671,18 +785,24 @@ export default function ProductDetails() {
   const imageCount = product.images?.length || 0;
   const ghostWord = (product.name || "").split(" ")[0];
 
+  // first few specs get the spotlight cards; the rest become a point list
+  const specsList = product.specs || [];
+  const primarySpecs = specsList.slice(0, 4);
+  const restSpecs = specsList.slice(4);
+  const hasPoints = restSpecs.length > 0 || hasDimensions;
+  const totalCount = specsList.length + (hasDimensions ? 1 : 0);
+
   /* ---------- page ------------------------------------------------- */
 
   return (
     <div className="relative min-h-screen overflow-x-clip bg-white px-5 sm:px-[26px] py-8 sm:py-14">
       <PDStyles />
 
-      {/* ambient layer: film grain + soft top glow */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[1] opacity-[0.05] mix-blend-multiply" style={{ backgroundImage: GRAIN }} />
       <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-240px] h-[480px] w-[min(780px,100%)] -translate-x-1/2 rounded-full bg-red-100/50 blur-[130px]" />
 
       <div className="relative z-[2] mx-auto max-w-[1160px]">
-        {/* ---------- breadcrumb ---------- */}
+        {/* breadcrumb */}
         <Reveal>
           <nav className="mb-10 flex flex-wrap items-center gap-2.5 font-['JetBrains_Mono'] text-[11px] uppercase tracking-[0.14em] text-zinc-400">
             <Link to="/" className="text-zinc-400 no-underline transition-colors hover:text-zinc-900">
@@ -695,7 +815,7 @@ export default function ProductDetails() {
           </nav>
         </Reveal>
 
-        {/* ---------- editorial header ---------- */}
+        {/* editorial header */}
         <Reveal delay={50}>
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3.5 py-1.5 ring-1 ring-red-100 font-['JetBrains_Mono'] text-[10px] font-medium uppercase tracking-[0.22em] text-red-600">
@@ -723,7 +843,7 @@ export default function ProductDetails() {
           </h1>
         </Reveal>
 
-        {/* ---------- gallery + sticky buy rail ---------- */}
+        {/* gallery + sticky buy rail */}
         <div className="mb-20 grid grid-cols-1 items-start gap-12 lg:mb-28 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
           <Reveal delay={150}>
             <Gallery
@@ -754,7 +874,6 @@ export default function ProductDetails() {
               <ArrowIcon className={`h-[18px] w-[18px] ${isRTL ? "rotate-180" : ""}`} />
             </MagneticLink>
 
-            {/* trust line — no spec repeat; full specs live in the grid below */}
             <div className="mt-7 flex items-center gap-2.5 font-['JetBrains_Mono'] text-[10.5px] uppercase tracking-[0.14em] text-zinc-400">
               <ChatIcon className="h-[13px] w-[13px] text-emerald-500" />
               {t("productDetails.contact")} · WhatsApp
@@ -762,81 +881,61 @@ export default function ProductDetails() {
           </Reveal>
         </div>
 
-        {/* ---------- characteristics: icon highlights grid ---------- */}
-        {(product.specs?.length > 0 || hasDimensions) && (
+        {/* characteristics: spotlight cards + point list */}
+        {(specsList.length > 0 || hasDimensions) && (
           <section className="mb-16 sm:mb-24">
             <Reveal>
-              <SectionHeading
-                index="01"
-                title={t("productDetails.characteristics")}
-                count={(product.specs?.length || 0) + (hasDimensions ? 1 : 0)}
-              />
+              <SectionHeading index="01" title={t("productDetails.characteristics")} count={totalCount} />
             </Reveal>
-            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-              {product.specs?.map((s, i) => {
-                const Icon = iconForLabel(s.label);
-                const c = BOX_COLORS[i % BOX_COLORS.length];
-                return (
-                  <Reveal key={i} delay={Math.min(i * 40, 320)}>
-                    <div
-                      className={`group relative h-full rounded-[24px] bg-white p-6 ring-1 ${c.ring} ${c.shadow} ${c.hover} transition-all duration-300 hover:-translate-y-1.5 sm:p-7`}
-                    >
-                      <span className={`absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] ${c.idx}`}>
-                        {pad(i + 1)}
-                      </span>
-                      <span
-                        className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${c.tile} ${c.hoverTile} transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-white group-hover:ring-transparent`}
-                      >
-                        <Icon c="h-[23px] w-[23px]" />
-                      </span>
-                      <p className="m-0 font-['Space_Grotesk'] text-[clamp(20px,2.3vw,26px)] font-bold leading-none tracking-[-0.02em] text-zinc-900">
-                        {s.value}
-                      </p>
-                      <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-500">
-                        {getPresetLabel("spec", s.label, language)}
-                      </p>
-                    </div>
-                  </Reveal>
-                );
-              })}
 
-              {hasDimensions && (() => {
-                const di = product.specs?.length || 0;
-                const c = BOX_COLORS[di % BOX_COLORS.length];
-                return (
-                  <Reveal delay={Math.min(di * 40, 320)}>
-                    <div
-                      className={`group relative h-full rounded-[24px] bg-white p-6 ring-1 ${c.ring} ${c.shadow} ${c.hover} transition-all duration-300 hover:-translate-y-1.5 sm:p-7`}
-                    >
-                      <span className={`absolute right-4 top-4 font-['JetBrains_Mono'] text-[10px] tracking-[0.1em] ${c.idx}`}>
-                        {pad(di + 1)}
-                      </span>
-                      <span
-                        className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${c.tile} ${c.hoverTile} transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-white group-hover:ring-transparent`}
-                      >
-                        <DimensionIcon className="h-[23px] w-[23px]" />
-                      </span>
-                      <p className="m-0 font-['Space_Grotesk'] text-[clamp(15px,1.8vw,18px)] font-bold leading-tight tracking-[-0.01em] text-zinc-900">
-                        {length} × {width} × {height}
-                        <span className="ml-1 font-['JetBrains_Mono'] text-[11px] font-medium text-zinc-400">mm</span>
-                      </p>
-                      <p className="mt-2.5 m-0 font-['JetBrains_Mono'] text-[10.5px] uppercase leading-snug tracking-[0.16em] text-zinc-500">
-                        {t("productDetails.characteristics")}
-                      </p>
-                    </div>
+            {primarySpecs.length > 0 && (
+              <div className="mb-4 grid grid-cols-2 gap-3.5 sm:mb-5 sm:gap-5 lg:grid-cols-4">
+                {primarySpecs.map((s, i) => (
+                  <Reveal key={i} delay={Math.min(i * 40, 240)}>
+                    <SpecCard
+                      index={i + 1}
+                      icon={iconForLabel(s.label)}
+                      value={s.value}
+                      label={getPresetLabel("spec", s.label, language)}
+                      color={BOX_COLORS[i % BOX_COLORS.length]}
+                    />
                   </Reveal>
-                );
-              })()}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {hasPoints && (
+              <Reveal delay={120}>
+                <div className="rounded-[24px] bg-zinc-50/60 px-5 ring-1 ring-zinc-200/70 sm:px-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-12">
+                    {restSpecs.map((s, i) => (
+                      <SpecPoint
+                        key={i}
+                        icon={iconForLabel(s.label)}
+                        label={getPresetLabel("spec", s.label, language)}
+                        value={s.value}
+                      />
+                    ))}
+                    {hasDimensions && (
+                      <SpecPoint
+                        icon={DimensionIcon}
+                        label="L × W × H"
+                        value={`${length} × ${width} × ${height} mm`}
+                      />
+                    )}
+                  </div>
+                </div>
+              </Reveal>
+            )}
           </section>
         )}
 
-        {/* ---------- equipment manifest ---------- */}
+        {/* equipment manifest */}
         {product.features?.length > 0 && (
           <section className="mb-20 sm:mb-28">
             <Reveal>
               <SectionHeading
-                index={product.specs?.length > 0 ? "02" : "01"}
+                index={specsList.length > 0 || hasDimensions ? "02" : "01"}
                 title={t("productDetails.equipments")}
                 count={product.features.length}
               />
@@ -859,7 +958,7 @@ export default function ProductDetails() {
           </section>
         )}
 
-        {/* ---------- cinematic closing panel ---------- */}
+        {/* cinematic closing panel */}
         <Reveal>
           <div className="relative overflow-hidden rounded-[36px] bg-zinc-950 px-6 py-16 text-center sm:px-16 sm:py-24">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
@@ -887,108 +986,19 @@ export default function ProductDetails() {
             </div>
           </div>
         </Reveal>
-
-        {/* ---------- lightbox ---------- */}
-        {lightboxOpen && (
-          <div
-            className="fixed inset-0 z-[60000] flex items-center justify-center bg-black/90 backdrop-blur-xl"
-            onClick={closeLightbox}
-          >
-            {imageCount > 0 && (
-              <div className="absolute top-5 left-5 z-10 font-['JetBrains_Mono'] text-[12px] tracking-[0.25em] text-white/80">
-                {pad(lightboxIndex + 1)} <span className="text-white/40">/ {pad(imageCount)}</span>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={closeLightbox}
-              aria-label="Close image"
-              className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xl text-white transition-all duration-300 hover:rotate-90 hover:bg-white/15"
-            >
-              ×
-            </button>
-
-            {imageCount > 1 && (
-              <button
-                type="button"
-                aria-label="Previous image"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setLightboxIndex((current) => (current === 0 ? imageCount - 1 : current - 1));
-                  setZoom(1);
-                }}
-                className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all duration-300 hover:scale-105 hover:bg-white/15"
-              >
-                <ArrowIcon className="h-5 w-5 rotate-180" />
-              </button>
-            )}
-
-            <div
-              className="relative flex h-full w-full max-w-6xl items-center justify-center p-4 sm:p-10"
-              onClick={(event) => event.stopPropagation()}
-            >
-              {product.images?.[lightboxIndex]?.url ? (
-                <img
-                  src={product.images[lightboxIndex].url}
-                  alt={product.name}
-                  onClick={() => setZoom((z) => (z === 1 ? 1.75 : 1))}
-                  style={{ transform: `scale(${zoom})` }}
-                  className={`max-h-full max-w-full rounded-2xl object-contain shadow-2xl transition-transform duration-500 ease-out ${
-                    zoom > 1 ? "cursor-zoom-out" : "cursor-zoom-in"
-                  }`}
-                />
-              ) : (
-                <div className="text-8xl text-white/80">🏍</div>
-              )}
-            </div>
-
-            {imageCount > 1 && (
-              <button
-                type="button"
-                aria-label="Next image"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setLightboxIndex((current) => (current + 1) % imageCount);
-                  setZoom(1);
-                }}
-                className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all duration-300 hover:scale-105 hover:bg-white/15"
-              >
-                <ArrowIcon className="h-5 w-5" />
-              </button>
-            )}
-
-            {imageCount > 1 && (
-              <div
-                className="absolute bottom-5 left-1/2 z-10 flex max-w-[92vw] -translate-x-1/2 gap-2.5 overflow-x-auto px-2 py-1"
-                onClick={(event) => event.stopPropagation()}
-              >
-                {product.images.map((img, i) => (
-                  <button
-                    key={img._id ?? `lb-${i}`}
-                    type="button"
-                    onClick={() => {
-                      setLightboxIndex(i);
-                      setZoom(1);
-                    }}
-                    className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
-                      lightboxIndex === i
-                        ? "ring-2 ring-red-500"
-                        : "opacity-50 ring-1 ring-white/20 hover:opacity-100"
-                    }`}
-                  >
-                    {img.url ? (
-                      <img src={img.url} alt={`${product.name} — ${i + 1}`} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full bg-zinc-800" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* lightbox (portaled, above the navbar) */}
+      {lightboxOpen && (
+        <Lightbox
+          product={product}
+          index={lightboxIndex}
+          setIndex={setLightboxIndex}
+          zoom={zoom}
+          setZoom={setZoom}
+          onClose={closeLightbox}
+        />
+      )}
     </div>
   );
 }
