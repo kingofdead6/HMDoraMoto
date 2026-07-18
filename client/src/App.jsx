@@ -3,8 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./Pages/HomePage";
 import Navbar from "./Components/Shared/NavBar";
 import Footer from "./Components/Shared/Footer";
-import ContactPage from "./Pages/ContactPage";
-
 import Login from "./Pages/Login";
 import ProtectedRoute from "./Components/Shared/ProtectedRoute";
 
@@ -29,7 +27,6 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/product/:id" element={<ProductDetailsPage />} />
-            <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<Login />} />
 
             {/* Protected Admin Routes */}
