@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export const SPEC_PRESET_OPTIONS = {
-  nominal_power: { fr: "Puissance nominale", ar: "القدرة الاسمية" },
-  nominal_voltage: { fr: "Tension nominale", ar: "الجهد الاسمي" },
+  nominal_power: { fr: "Puissance nominale", ar: "الاستطاعة المقدرة" },
+  nominal_voltage: { fr: "Tension nominale", ar: "التوتر المقدر" },
   controller: { fr: "Contrôleur", ar: "المتحكم" },
   battery_type: { fr: "Type de batterie", ar: "نوع البطارية" },
   battery_specs: { fr: "Spécifications de la batterie", ar: "مواصفات البطارية" },
@@ -15,8 +15,8 @@ export const SPEC_PRESET_OPTIONS = {
   tire_specs: { fr: "Spécifications des pneus", ar: "مواصفات الإطارات" },
   hub_specs: { fr: "Spécifications du moyeu", ar: "مواصفات المحور" },
   max_load: { fr: "Charge maximale", ar: "الحمولة القصوى" },
-  wheelbase: { fr: "Empattement", ar: "المسافة بين المحورين" },
-  body_tank: { fr: "Réservoir de carrosserie", ar: "خزان الجسم" },
+  wheelbase: { fr: "Empattement", ar: "المسافة بين العجلات" },
+  body_tank: { fr: "Réservoir de carrosserie", ar: "سعة خزان الدراجة" },
   seat_height: { fr: "Hauteur du siège", ar: "ارتفاع المقعد" },
   front_tires: { fr: "Pneus avant", ar: "الإطارات الأمامية" },
   rear_tires: { fr: "Pneus arrière", ar: "الإطارات الخلفية" },
