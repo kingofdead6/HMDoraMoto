@@ -42,8 +42,25 @@ function getVisibilityIssues(p, t) {
   if (!p.available) issues.push(t("adminProducts.visibilityAvailability"));
   if (!p.images || p.images.length === 0)
     issues.push(t("adminProducts.visibilityImages"));
-  if (!p.specs || p.specs.length === 0)
+  const mandatoryKeys = ["max_speed", "autonomy", "nominal_power", "charging_time"];
+  const pSpecs = p.specs || [];
+  const missingKeys = [];
+  
+  mandatoryKeys.forEach((key) => {
+    // Note: normalizePresetValue is needed here. If it's not imported at the top, I'll need to add it.
+    // Wait, getVisibilityIssues is outside the component where useLanguage is called. But t is passed.
+    // normalizePresetValue is imported from i18n.jsx. Let's make sure it's imported at the top of AdminProducts.jsx!
+    const spec = pSpecs.find((s) => s.label === key || normalizePresetValue("spec", s.label) === key);
+    if (!spec || !spec.value || !spec.value.trim()) {
+      missingKeys.push(key);
+    }
+  });
+  
+  if (missingKeys.length > 0) {
+    issues.push(t("adminProducts.visibilityMandatorySpecs"));
+  } else if (!p.specs || p.specs.length === 0) {
     issues.push(t("adminProducts.visibilitySpecs"));
+  }
   return issues;
 }
 
@@ -117,17 +134,33 @@ function VisibilityIssuesPopup({ issues, onClose }) {
 
 function ProductForm({ initial, onSubmit, onCancel, saving }) {
   const { t, language } = useLanguage();
-  const normalizeForm = (value) => ({
-    ...value,
-    specs: (value?.specs || []).map((spec) => ({
+  const normalizeForm = (value) => {
+    const specs = (value?.specs || []).map((spec) => ({
       ...spec,
       label: normalizePresetValue("spec", spec.label),
-    })),
-    features: (value?.features || []).map((feature) => normalizePresetValue("feature", feature)),
-  });
+    }));
+    
+    ["max_speed", "autonomy", "nominal_power", "charging_time"].forEach((key) => {
+      if (!specs.some((s) => s.label === key)) {
+        specs.push({ label: key, value: "" });
+      }
+    });
+
+    return {
+      ...value,
+      specs,
+      features: (value?.features || []).map((feature) => normalizePresetValue("feature", feature)),
+    };
+  };
   const [form, setForm] = useState(() => normalizeForm(initial || emptyForm));
-  const [existingImages, setExistingImages] = useState(initial?.images || []);
-  const [newFiles, setNewFiles] = useState([]);
+  const [imageItems, setImageItems] = useState(() =>
+    (initial?.images || []).map((img) => ({
+      id: img._id ? String(img._id) : img.url,
+      type: 'existing',
+      url: img.url,
+      _id: img._id,
+    }))
+  );
   const [removedImageIds, setRemovedImageIds] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const objectUrlsRef = useRef([]);
@@ -138,13 +171,26 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     };
   }, []);
 
+  useEffect(() => {
+    setForm(normalizeForm(initial || emptyForm));
+    setImageItems(
+      (initial?.images || []).map((img) => ({
+        id: img._id ? String(img._id) : img.url,
+        type: 'existing',
+        url: img.url,
+        _id: img._id,
+      }))
+    );
+    setRemovedImageIds([]);
+  }, [initial]);
+
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
   // Live warnings shown right in the form as the admin fills it in — the
   // same checks used for the post-save popup, so there's no surprise.
   const liveIssues = getVisibilityIssues({
     ...form,
-    images: [...existingImages, ...newFiles],
+    images: imageItems.map((item) => ({ url: item.url || item.previewUrl })),
   }, t);
 
   const specPresets = Object.keys(SPEC_PRESET_OPTIONS).map((key) => ({
@@ -196,7 +242,7 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
 
-    const remainingSlots = MAX_IMAGES - existingImages.length - newFiles.length;
+    const remainingSlots = MAX_IMAGES - imageItems.length;
     if (files.length > remainingSlots) {
       toast.error(
         remainingSlots > 0
@@ -215,21 +261,35 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     const withPreviews = files.map((file) => {
       const previewUrl = URL.createObjectURL(file);
       objectUrlsRef.current.push(previewUrl);
-      return { file, previewUrl };
+      return {
+        id: previewUrl,
+        type: 'new',
+        file,
+        previewUrl,
+      };
     });
-    setNewFiles((prev) => [...prev, ...withPreviews]);
+    setImageItems((prev) => [...prev, ...withPreviews]);
   };
 
-  const removeExistingImage = (imgId) => {
-    setExistingImages((prev) => prev.filter((img) => img._id !== imgId));
-    setRemovedImageIds((prev) => [...prev, imgId]);
+  const removeImageItem = (itemId) => {
+    setImageItems((prev) => {
+      const target = prev.find((item) => item.id === itemId);
+      if (target?.type === 'new') {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      if (target?.type === 'existing') {
+        setRemovedImageIds((prevRemoved) => [...prevRemoved, itemId]);
+      }
+      return prev.filter((item) => item.id !== itemId);
+    });
   };
 
-  const removeNewFile = (idx) => {
-    setNewFiles((prev) => {
-      const target = prev[idx];
-      if (target) URL.revokeObjectURL(target.previewUrl);
-      return prev.filter((_, i) => i !== idx);
+  const reorderImageItems = (fromIndex, toIndex) => {
+    setImageItems((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      return next;
     });
   };
 
@@ -241,7 +301,21 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    onSubmit({ form, newFiles: newFiles.map((nf) => nf.file), removedImageIds });
+    const newFiles = [];
+    const imageOrder = imageItems.map((item) => {
+      if (item.type === 'new') {
+        newFiles.push(item.file);
+        return `new-${newFiles.length - 1}`;
+      }
+      return item.id;
+    });
+
+    onSubmit({
+      form,
+      newFiles,
+      removedImageIds,
+      imageOrder,
+    });
   };
 
   return createPortal(
@@ -478,24 +552,42 @@ function ProductForm({ initial, onSubmit, onCancel, saving }) {
             {t("adminProducts.imageSection")}
           </span>
           <div className="flex flex-wrap gap-2.5 mb-3">
-            {existingImages.map((img) => (
-              <div key={img._id} className="relative w-20 h-20 rounded-[10px] overflow-hidden border border-gray-200">
-                <img src={img.url} alt="Photo du produit" className="w-full h-full object-cover" />
+            {imageItems.map((item, index) => (
+              <div
+                key={item.id}
+                draggable
+                data-index={index}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', String(index));
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                onDragEnd={() => {
+                  dragDataRef.current = null;
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const fromIndex = Number(e.dataTransfer.getData('text/plain'));
+                  const toIndex = Number(e.currentTarget.dataset.index);
+                  if (!Number.isNaN(fromIndex) && fromIndex !== toIndex) {
+                    reorderImageItems(fromIndex, toIndex);
+                  }
+                }}
+                className={
+                  "relative w-20 h-20 rounded-[10px] overflow-hidden cursor-grab " +
+                  (item.type === 'new'
+                    ? 'border-2 border-red-500'
+                    : 'border border-gray-200')
+                }
+              >
+                <img
+                  src={item.type === 'new' ? item.previewUrl : item.url}
+                  alt={item.type === 'new' ? item.file.name : 'Photo du produit'}
+                  className="w-full h-full object-cover"
+                />
                 <button
                   type="button"
-                  onClick={() => removeExistingImage(img._id)}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            ))}
-            {newFiles.map((nf, i) => (
-              <div key={nf.previewUrl} className="relative w-20 h-20 rounded-[10px] overflow-hidden border-2 border-red-500">
-                <img src={nf.previewUrl} alt={nf.file.name} className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeNewFile(i)}
+                  onClick={() => removeImageItem(item.id)}
                   className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center"
                 >
                   <X size={11} />
@@ -656,12 +748,12 @@ export default function AdminProducts() {
     return fd;
   };
 
-  const handleSubmit = async ({ form, newFiles, removedImageIds }) => {
+  const handleSubmit = async ({ form, newFiles, removedImageIds, imageOrder }) => {
     setSaving(true);
     try {
       const fd = buildFormData({ form });
+      if (imageOrder) fd.append("imageOrder", JSON.stringify(imageOrder));
       newFiles.forEach((file) => fd.append("images", file));
-
       const isEdit = Boolean(editing && editing._id);
       const url = isEdit
         ? `${API_BASE_URL}/products/${editing._id}`
@@ -761,6 +853,7 @@ export default function AdminProducts() {
 
       {editing !== null && (
         <ProductForm
+          key={editing?._id || 'new'}
           initial={
             editing._id
               ? {

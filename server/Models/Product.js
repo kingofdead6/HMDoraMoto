@@ -35,14 +35,20 @@ const productSchema = new mongoose.Schema({
     height: { type: Number, default: null },
   },
 
-  specs: [
-    {
-      label: { type: String, required: true, trim: true },
-      value: { type: String, required: true, trim: true },
-    },
-  ],
+  specs: {
+    type: [
+      {
+        label: { type: String, required: true, trim: true },
+        value: { type: String, required: true, trim: true },
+      },
+    ],
+    default: [],
+  },
 
-  features: [{ type: String, trim: true }],
+  features: {
+    type: [{ type: String, trim: true }],
+    default: [],
+  },
 
   available: {
     type: Boolean,

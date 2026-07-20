@@ -160,6 +160,18 @@ export const createProduct = asyncHandler(async (req, res) => {
     }
 
     const specs = normalizeSpecs(parseJSONField(req.body.specs, []));
+
+    const requiredSpecs = ['max_speed', 'autonomy', 'nominal_power', 'charging_time'];
+    const missingSpecs = requiredSpecs.filter(key => {
+      const spec = specs.find(s => s.label === key);
+      return !spec || !spec.value || !spec.value.trim();
+    });
+
+    if (missingSpecs.length > 0) {
+      res.status(400);
+      throw new Error(`Les caractéristiques suivantes sont obligatoires : ${missingSpecs.map(k => SPEC_PRESET_LOOKUP[k][0]).join(', ')}`);
+    }
+
     const features = normalizeFeatures(parseJSONField(req.body.features, []));
     const dimensions = parseJSONField(req.body.dimensions, {
       length: null,
@@ -226,19 +238,79 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (showOnMainPage !== undefined)
     product.showOnMainPage = showOnMainPage === 'true' || showOnMainPage === true;
 
-  if (req.body.specs !== undefined) product.specs = normalizeSpecs(parseJSONField(req.body.specs, product.specs));
+  if (req.body.specs !== undefined) {
+    const specs = normalizeSpecs(parseJSONField(req.body.specs, product.specs));
+    
+    const requiredSpecs = ['max_speed', 'autonomy', 'nominal_power', 'charging_time'];
+    const missingSpecs = requiredSpecs.filter(key => {
+      const spec = specs.find(s => s.label === key);
+      return !spec || !spec.value || !spec.value.trim();
+    });
+
+    if (missingSpecs.length > 0) {
+      res.status(400);
+      throw new Error(`Les caractéristiques suivantes sont obligatoires : ${missingSpecs.map(k => SPEC_PRESET_LOOKUP[k][0]).join(', ')}`);
+    }
+
+    product.specs = specs;
+  }
+  
   if (req.body.features !== undefined)
     product.features = normalizeFeatures(parseJSONField(req.body.features, product.features));
   if (req.body.dimensions !== undefined)
     product.dimensions = parseJSONField(req.body.dimensions, product.dimensions);
 
-  if (req.files && req.files.length > 0) {
+  const queuedFiles = Array.isArray(req.files) ? [...req.files] : [];
+  let nextNewFileIndex = 0;
+
+  if (req.body.imageOrder !== undefined) {
+    const imageOrder = parseJSONField(req.body.imageOrder, []);
+    if (Array.isArray(imageOrder) && imageOrder.length > 0) {
+      const originalImages = Array.isArray(product.images) ? product.images.slice() : [];
+      const byId = new Map(originalImages.map((img) => [String(img._id), img]));
+      const byUrl = new Map(originalImages.map((img) => [img.url, img]));
+      const ordered = [];
+      const consumedIds = new Set();
+      const consumedUrls = new Set();
+
+      for (const token of imageOrder) {
+        if (typeof token === 'string' && token.startsWith('new-')) {
+          const file = queuedFiles[nextNewFileIndex];
+          if (file) {
+            const { url, public_id } = await uploadToCloudinary(file);
+            ordered.push({ url, public_id });
+            nextNewFileIndex += 1;
+          }
+        } else {
+          let img = byId.get(String(token));
+          if (img) {
+            ordered.push(img);
+            consumedIds.add(String(img._id));
+          } else {
+            img = byUrl.get(token);
+            if (img) {
+              ordered.push(img);
+              consumedUrls.add(img.url);
+            }
+          }
+        }
+      }
+
+      const remainingExisting = originalImages.filter((img) => {
+        return !consumedIds.has(String(img._id)) && !consumedUrls.has(img.url);
+      });
+      product.images = [...ordered, ...remainingExisting];
+    }
+  }
+
+  const remainingFiles = queuedFiles.slice(nextNewFileIndex);
+  if (remainingFiles.length > 0) {
     const newImages = [];
-    for (const file of req.files) {
+    for (const file of remainingFiles) {
       const { url, public_id } = await uploadToCloudinary(file);
       newImages.push({ url, public_id });
     }
-    product.images = [...product.images, ...newImages];
+    product.images = [...(Array.isArray(product.images) ? product.images : []), ...newImages];
   }
 
   const updated = await product.save();

@@ -5,7 +5,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../../api";
 import { store } from "../../store.config.js";
 import { toast } from "react-toastify";
-import { useLanguage, getPresetLabel } from "../../i18n.jsx";
+import { useLanguage, getPresetLabel, normalizePresetValue } from "../../i18n.jsx";
 
 /* ------------------------------------------------------------------ */
 /*  design tokens & helpers                                            */
@@ -91,9 +91,9 @@ const iconBase = {
 const SpecIcons = {
   speed: (c) => (
     <svg {...iconBase} className={c} aria-hidden="true">
-      <path d="M4 19a8 8 0 1 1 16 0" />
-      <path d="M14.5 10.5 12 15" />
-      <circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none" />
+      <path d="M4 14a8 8 0 1 1 16 0" />
+      <path d="M12 14L15 11" strokeLinecap="round" />
+      <circle cx="12" cy="14" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   ),
   range: (c) => (
@@ -111,10 +111,10 @@ const SpecIcons = {
   ),
   battery: (c) => (
     <svg {...iconBase} className={c} aria-hidden="true">
-      <rect x="2.5" y="8" width="16" height="9.5" rx="2" />
-      <path d="M21.5 11.2v3" />
-      <path d="M7.5 8V5.5h6V8" />
-      <path d="M8.5 12.8h4" />
+      <rect x="3" y="7.5" width="14" height="9" rx="2" />
+      <rect x="8" y="10" width="6" height="4" rx="1" fill="currentColor" stroke="none" />
+      <path d="M17 9.5h2" />
+      <path d="M7 9.5H5" />
     </svg>
   ),
   charge: (c) => (
@@ -785,12 +785,30 @@ export default function ProductDetails() {
   const imageCount = product.images?.length || 0;
   const ghostWord = (product.name || "").split(" ")[0];
 
-  // first few specs get the spotlight cards; the rest become a point list
   const specsList = product.specs || [];
-  const primarySpecs = specsList.slice(0, 4);
-  const restSpecs = specsList.slice(4);
+  const REQUIRED_SPEC_KEYS = ["max_speed", "autonomy", "nominal_power", "charging_time"];
+  const primaryMap = {};
+  const restSpecs = [];
+
+  specsList.forEach((spec) => {
+    const norm = normalizePresetValue("spec", spec.label);
+    if (REQUIRED_SPEC_KEYS.includes(norm)) {
+      primaryMap[norm] = spec.value;
+    } else {
+      restSpecs.push(spec);
+    }
+  });
+
+  const primarySpecs = REQUIRED_SPEC_KEYS.map((key) => {
+    const value = (primaryMap[key] || "").trim();
+    return {
+      label: key,
+      value: value || (key === "charging_time" ? "6-8H" : "-"),
+    };
+  });
+
   const hasPoints = restSpecs.length > 0 || hasDimensions;
-  const totalCount = specsList.length + (hasDimensions ? 1 : 0);
+  const totalCount = restSpecs.length + REQUIRED_SPEC_KEYS.length + (hasDimensions ? 1 : 0);
 
   /* ---------- page ------------------------------------------------- */
 
